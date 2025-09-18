@@ -1,13 +1,16 @@
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import "@/app/globals.css";
+"use client"
+
+import Navbar from "@/components/layout/Navbar"
+import Footer from "@/components/layout/Footer"
+import Loader from "@/components/layout/Loader"
 
 export default function WebsiteLayout({ children }) {
   return (
-    <div className="flex flex-col min-h-screen">
+    <>
+      <Loader />
       <Navbar />
-      <main className="flex-grow">{children}</main>
+      <main className="pt-32">{children}</main>
       <Footer />
-    </div>
-  );
+    </>
+  )
 }
