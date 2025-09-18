@@ -1,10 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { logoutUser } from "@/lib/auth";
 import toast from "react-hot-toast";
-import "@/app/globals.css";
 
 const navItems = [
   { name: "Dashboard", href: "/admin" },
@@ -18,6 +18,7 @@ const navItems = [
 export default function AdminLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -30,39 +31,77 @@ export default function AdminLayout({ children }) {
   };
 
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <aside className="w-64 bg-brand text-white flex flex-col">
-        <div className="p-6 text-2xl font-playfair font-bold border-b border-white/20">
-          Megora Admin
-        </div>
-        <nav className="flex-1 p-4 space-y-2">
-          {navItems.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={`block px-3 py-2 rounded-md transition ${
-                pathname === item.href
-                  ? "bg-brand-dark text-white"
-                  : "hover:bg-white/10"
-              }`}
-            >
-              {item.name}
-            </Link>
-          ))}
-        </nav>
-        <div className="p-4 border-t border-white/20">
+    <div className="min-h-screen flex flex-col">
+      {/* Top Navbar (mobile + desktop) */}
+      <header className="bg-gray-900 text-white flex items-center justify-between px-4 py-3 md:px-6">
+        <div className="flex items-center gap-3">
           <button
-            onClick={handleLogout}
-            className="w-full bg-white text-brand font-semibold py-2 rounded-md hover:bg-gray-200"
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden p-2 rounded hover:bg-gray-800"
           >
-            Logout
+            ☰
           </button>
+          <h1 className="font-bold text-xl">Megora Admin</h1>
         </div>
-      </aside>
+        <button
+          onClick={handleLogout}
+          className="text-sm bg-white text-gray-900 font-medium px-3 py-1.5 rounded hover:bg-gray-100"
+        >
+          Logout
+        </button>
+      </header>
 
-      {/* Main Content */}
-      <div className="flex-1 bg-gray-50 p-6">{children}</div>
+      <div className="flex flex-1">
+        {/* Sidebar (desktop) */}
+        <aside className="hidden md:block w-64 bg-white border-r border-gray-200">
+          <nav className="p-4 space-y-1">
+            {navItems.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`block px-3 py-2 rounded-md text-sm font-medium ${
+                  pathname === item.href
+                    ? "bg-gray-100 text-gray-900"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
+              >
+                {item.name}
+              </Link>
+            ))}
+          </nav>
+        </aside>
+
+        {/* Mobile Sidebar Overlay */}
+        {menuOpen && (
+          <div className="fixed inset-0 z-50 flex">
+            <div className="w-64 bg-white shadow-lg">
+              <nav className="p-4 space-y-1">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setMenuOpen(false)}
+                    className={`block px-3 py-2 rounded-md text-sm font-medium ${
+                      pathname === item.href
+                        ? "bg-gray-100 text-gray-900"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+            <div
+              className="flex-1 bg-black/50"
+              onClick={() => setMenuOpen(false)}
+            />
+          </div>
+        )}
+
+        {/* Main Content */}
+        <main className="flex-1 p-4 md:p-6 bg-gray-50">{children}</main>
+      </div>
     </div>
   );
 }

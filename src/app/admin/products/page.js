@@ -14,6 +14,12 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import toast from "react-hot-toast";
 
+import {
+  card, cardBody, sectionTitle, subText,
+  inputBase, selectBase, buttonPrimary, buttonGhost,
+  tableWrap, tableBase, thBase, tdBase, rowHover
+} from "@/components/admin/ui";
+
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [filtered, setFiltered] = useState([]);
@@ -79,23 +85,6 @@ export default function ProductsPage() {
     }
   };
 
-  const handleSetThumbnail = async (productId, url) => {
-    try {
-      const productRef = doc(db, "products", productId);
-      const product = products.find((p) => p.id === productId);
-      const media = (product.media || []).map((m) => ({
-        ...m,
-        thumbnail: m.url === url,
-      }));
-
-      await updateDoc(productRef, { media });
-      toast.success("Thumbnail updated ✅");
-      fetchProducts();
-    } catch (err) {
-      toast.error("Failed to set thumbnail: " + err.message);
-    }
-  };
-
   const handleVariantUpdate = async (productId, vi, oi, field, value) => {
     try {
       const productRef = doc(db, "products", productId);
@@ -151,234 +140,249 @@ export default function ProductsPage() {
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
   return (
-    <div>
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-bold text-brand">Products</h1>
-        <Link
-          href="/admin/products/add"
-          className="px-4 py-2 bg-brand text-white rounded-md hover:bg-brand-dark"
-        >
+    <div className="bg-gray-50 min-h-screen p-4 md:p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Products</h1>
+          <p className={subText}>View, edit and manage your product catalog.</p>
+        </div>
+        <Link href="/admin/products/add" className={buttonPrimary}>
           + Add Product
         </Link>
       </div>
 
-      {/* Search + Filters */}
-      <div className="flex flex-col md:flex-row gap-3 mb-6">
-        <input
-          type="text"
-          placeholder="Search by title or SKU..."
-          className="border rounded p-2 flex-1"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      {/* Filters */}
+      <section className={`${card} mb-6`}>
+        <div className={cardBody}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Search</label>
+              <input
+                type="text"
+                placeholder="Search by title or SKU..."
+                className={inputBase}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
+              <select
+                className={selectBase}
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+              >
+                <option value="all">All Categories</option>
+                {categories.map((cat, i) => (
+                  <option key={i} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
 
-        <select
-          className="border rounded p-2 md:w-48"
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-        >
-          <option value="all">All Categories</option>
-          {categories.map((cat, i) => (
-            <option key={i} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Table */}
+      <section className={card}>
+        <div className={cardBody}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className={sectionTitle}>All Products</h2>
+            <span className={subText}>{filtered.length} result(s)</span>
+          </div>
 
-      {loading ? (
-        <p>Loading...</p>
-      ) : currentItems.length === 0 ? (
-        <p>No products found.</p>
-      ) : (
-        <>
-          <div className="overflow-x-auto bg-white shadow rounded-lg">
-            <table className="w-full border-collapse text-sm md:text-base">
-              <thead className="bg-gray-100">
+          <div className={tableWrap}>
+            <table className={tableBase}>
+              <thead className="sticky top-0 bg-white">
                 <tr>
-                  <th className="p-3 text-left">Thumbnail</th>
-                  <th className="p-3 text-left">Name</th>
-                  <th className="p-3 text-left">Category</th>
-                  <th className="p-3 text-left">SKU</th>
-                  <th className="p-3 text-left">Price</th>
-                  <th className="p-3 text-left">Stock</th>
-                  <th className="p-3 text-center">Actions</th>
+                  <th className={thBase}>Product</th>
+                  <th className={thBase}>Category</th>
+                  <th className={thBase}>SKU</th>
+                  <th className={thBase}>Price</th>
+                  <th className={thBase}>Stock</th>
+                  <th className={thBase}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {currentItems.map((p) => {
-                  const thumb =
-                    p.media?.find((m) => m.thumbnail)?.url ||
-                    p.media?.[0]?.url ||
-                    "/logo.png";
+                {loading ? (
+                  <tr><td className={tdBase} colSpan={6}>Loading…</td></tr>
+                ) : currentItems.length === 0 ? (
+                  <tr><td className={tdBase} colSpan={6}>No products found.</td></tr>
+                ) : (
+                  currentItems.map((p) => {
+                    const thumb =
+                      p.media?.find((m) => m.thumbnail)?.url ||
+                      p.media?.[0]?.url ||
+                      "/logo.png";
 
-                  const stock =
-                    p.stock ??
-                    p.variants?.reduce(
-                      (sum, v) =>
-                        sum +
-                        v.options?.reduce(
-                          (osum, o) => osum + (parseInt(o.stock) || 0),
-                          0
-                        ),
-                      0
-                    ) ??
-                    0;
+                    const stock =
+                      p.stock ??
+                      p.variants?.reduce(
+                        (sum, v) =>
+                          sum +
+                          v.options?.reduce(
+                            (osum, o) => osum + (parseInt(o.stock) || 0),
+                            0
+                          ),
+                        0
+                      ) ??
+                      0;
 
-                  const price =
-                    p.price ??
-                    (p.variants?.flatMap((v) =>
-                      v.options.map((o) => parseFloat(o.price) || 0)
-                    ) || [0]);
-                  const displayPrice = Array.isArray(price)
-                    ? `₹${Math.min(...price)}+`
-                    : `₹${price}`;
+                    const price =
+                      p.price ??
+                      (p.variants?.flatMap((v) =>
+                        v.options.map((o) => parseFloat(o.price) || 0)
+                      ) || [0]);
+                    const displayPrice = Array.isArray(price)
+                      ? `₹${Math.min(...price)}+`
+                      : `₹${price}`;
 
-                  return (
-                    <>
-                      {/* Main Row */}
-                      <tr key={p.id} className="border-b align-top">
-                        <td className="p-3">
-                          <Image
-                            src={thumb}
-                            alt={p.title}
-                            width={50}
-                            height={50}
-                            className="rounded object-cover"
-                          />
-                        </td>
-                        <td className="p-3 font-medium">{p.title}</td>
-                        <td className="p-3">{p.category || "-"}</td>
-                        <td className="p-3">{p.sku}</td>
-                        <td className="p-3">{displayPrice}</td>
-                        <td className="p-3">{stock}</td>
-                        <td className="p-3 flex flex-col gap-2 md:flex-row justify-center">
-                          <Link
-                            href={`/admin/products/${p.id}`}
-                            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs md:text-sm text-center"
-                          >
-                            Edit
-                          </Link>
-                          <button
-                            onClick={() => handleDelete(p.id)}
-                            className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs md:text-sm text-center"
-                          >
-                            Delete
-                          </button>
-                          <label className="px-3 py-1 bg-gray-200 text-gray-700 rounded cursor-pointer hover:bg-gray-300 text-xs md:text-sm text-center">
-                            {uploading === p.id ? "Uploading..." : "Upload Image"}
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => handleUpload(e.target.files[0], p.id)}
-                              disabled={uploading === p.id}
-                            />
-                          </label>
-                          {p.variants?.length > 0 && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setExpanded(expanded === p.id ? null : p.id)
-                              }
-                              className="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-xs md:text-sm text-center"
-                            >
-                              {expanded === p.id ? "Hide Variants" : "Show Variants"}
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-
-                      {/* Expandable Variant Row */}
-                      {expanded === p.id && p.variants?.length > 0 && (
-                        <tr>
-                          <td colSpan="7" className="bg-gray-50 p-4">
-                            <div className="overflow-x-auto">
-                              <table className="w-full border text-sm">
-                                <thead className="bg-gray-100">
-                                  <tr>
-                                    <th className="p-2 text-left">Variant</th>
-                                    <th className="p-2 text-left">Option</th>
-                                    <th className="p-2 text-left">Price</th>
-                                    <th className="p-2 text-left">Stock</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {p.variants.map((v, vi) =>
-                                    v.options.map((o, oi) => (
-                                      <tr key={`${vi}-${oi}`} className="border-b">
-                                        <td className="p-2">{v.title}</td>
-                                        <td className="p-2">{o.name}</td>
-                                        <td className="p-2">
-                                          <input
-                                            type="number"
-                                            className="border p-1 w-20 rounded"
-                                            defaultValue={o.price}
-                                            onBlur={(e) =>
-                                              handleVariantUpdate(
-                                                p.id,
-                                                vi,
-                                                oi,
-                                                "price",
-                                                e.target.value
-                                              )
-                                            }
-                                          />
-                                        </td>
-                                        <td className="p-2">
-                                          <input
-                                            type="number"
-                                            className="border p-1 w-20 rounded"
-                                            defaultValue={o.stock}
-                                            onBlur={(e) =>
-                                              handleVariantUpdate(
-                                                p.id,
-                                                vi,
-                                                oi,
-                                                "stock",
-                                                e.target.value
-                                              )
-                                            }
-                                          />
-                                        </td>
-                                      </tr>
-                                    ))
-                                  )}
-                                </tbody>
-                              </table>
+                    return (
+                      <>
+                        <tr key={p.id} className={rowHover}>
+                          <td className={tdBase}>
+                            <div className="flex items-center gap-3">
+                              <Image
+                                src={thumb}
+                                alt={p.title}
+                                width={50}
+                                height={50}
+                                className="rounded-lg object-cover border"
+                              />
+                              <span className="font-medium text-gray-900">{p.title}</span>
+                            </div>
+                          </td>
+                          <td className={tdBase}>{p.category || "-"}</td>
+                          <td className={tdBase}>{p.sku}</td>
+                          <td className={tdBase}>{displayPrice}</td>
+                          <td className={tdBase}>{stock}</td>
+                          <td className={tdBase}>
+                            <div className="flex flex-wrap gap-2">
+                              <Link href={`/admin/products/${p.id}`} className={buttonGhost}>
+                                Edit
+                              </Link>
+                              <button
+                                onClick={() => handleDelete(p.id)}
+                                className="text-red-600 hover:underline text-sm"
+                              >
+                                Delete
+                              </button>
+                              <label className="px-3 py-1 border rounded-lg text-xs cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                {uploading === p.id ? "Uploading…" : "Upload"}
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => handleUpload(e.target.files[0], p.id)}
+                                  disabled={uploading === p.id}
+                                />
+                              </label>
+                              {p.variants?.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setExpanded(expanded === p.id ? null : p.id)
+                                  }
+                                  className="px-3 py-1 border rounded-lg text-xs bg-gray-50 hover:bg-gray-100"
+                                >
+                                  {expanded === p.id ? "Hide Variants" : "Show Variants"}
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
-                      )}
-                    </>
-                  );
-                })}
+
+                        {/* Variants */}
+                        {expanded === p.id && p.variants?.length > 0 && (
+                          <tr>
+                            <td colSpan="6" className="bg-gray-50 p-4">
+                              <div className="overflow-x-auto">
+                                <table className="w-full border text-sm">
+                                  <thead className="bg-gray-100">
+                                    <tr>
+                                      <th className="p-2 text-left">Variant</th>
+                                      <th className="p-2 text-left">Option</th>
+                                      <th className="p-2 text-left">Price</th>
+                                      <th className="p-2 text-left">Stock</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {p.variants.map((v, vi) =>
+                                      v.options.map((o, oi) => (
+                                        <tr key={`${vi}-${oi}`} className="border-b">
+                                          <td className="p-2">{v.title}</td>
+                                          <td className="p-2">{o.name}</td>
+                                          <td className="p-2">
+                                            <input
+                                              type="number"
+                                              className={inputBase + " w-24 h-8 text-sm"}
+                                              defaultValue={o.price}
+                                              onBlur={(e) =>
+                                                handleVariantUpdate(
+                                                  p.id,
+                                                  vi,
+                                                  oi,
+                                                  "price",
+                                                  e.target.value
+                                                )
+                                              }
+                                            />
+                                          </td>
+                                          <td className="p-2">
+                                            <input
+                                              type="number"
+                                              className={inputBase + " w-24 h-8 text-sm"}
+                                              defaultValue={o.stock}
+                                              onBlur={(e) =>
+                                                handleVariantUpdate(
+                                                  p.id,
+                                                  vi,
+                                                  oi,
+                                                  "stock",
+                                                  e.target.value
+                                                )
+                                              }
+                                            />
+                                          </td>
+                                        </tr>
+                                      ))
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
 
-          {/* Pagination Controls */}
-          <div className="flex justify-center items-center gap-4 mt-4">
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-              className="px-3 py-1 border rounded disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <span>
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-              className="px-3 py-1 border rounded disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        </>
-      )}
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-6">
+              {Array.from({ length: totalPages }, (_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`px-3 py-1 rounded-lg text-sm ${
+                    currentPage === i + 1
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

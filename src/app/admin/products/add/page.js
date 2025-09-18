@@ -1,9 +1,11 @@
 "use client";
+
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import ProductForm from "../../../../components/admin/ProductForm";
+import ProductForm from "@/components/admin/ProductForm";
+import { card, cardBody, sectionTitle } from "@/components/admin/ui";
 
 export default function AddProductPage() {
   const router = useRouter();
@@ -23,9 +25,13 @@ export default function AddProductPage() {
   };
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold text-brand mb-6">Add Product</h1>
-      <ProductForm onSubmit={handleAdd} submitLabel="Save Product" />
+    <div className="bg-gray-50 min-h-screen p-4 md:p-6">
+      <div className={`${card} max-w-5xl mx-auto`}>
+        <div className={cardBody}>
+          <h1 className={sectionTitle + " mb-6"}>Add Product</h1>
+          <ProductForm onSubmit={handleAdd} submitLabel="Save Product" />
+        </div>
+      </div>
     </div>
   );
 }
