@@ -9,7 +9,7 @@ export default function WebsiteLayout({ children }) {
     <>
       <Loader />
       <Navbar />
-      <main className="pt-32">{children}</main>
+      <main>{children}</main>  {/* ⬅️ no padding here */}
       <Footer />
     </>
   )

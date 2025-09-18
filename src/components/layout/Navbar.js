@@ -21,7 +21,7 @@ import {
 } from "@heroicons/react/24/outline"
 import Link from "next/link"
 import Image from "next/image"
-import { searchProducts } from "@/lib/db"   // ✅ now from Firestore
+import { searchProducts } from "@/lib/db"
 
 const navigation = {
   categories: [
@@ -59,7 +59,7 @@ const navigation = {
   ],
 }
 
-// ✅ Helper: Get price
+// ✅ Helper
 function getPrice(product, currency) {
   const price = product?.prices?.[currency] || null
   return price ? price : null
@@ -79,7 +79,7 @@ export default function Navbar() {
 
   // Scroll effect
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 80)
+    const handleScroll = () => setScrolled(window.scrollY > window.innerHeight * 0.7) // transparent only on hero
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
@@ -129,7 +129,7 @@ export default function Navbar() {
                     <Tab
                       key={category.name}
                       className="flex-1 border-b-2 border-transparent px-1 py-4 text-base font-medium text-gray-900 
-                        data-selected:border-brand-green data-selected:text-brand-green"
+                        data-selected:border-brand data-selected:text-brand"
                     >
                       {category.name}
                     </Tab>
@@ -162,7 +162,7 @@ export default function Navbar() {
                         <ul className="mt-4 flex flex-col space-y-2">
                           {section.items.map((item) => (
                             <li key={item.name}>
-                              <a href={item.href} className="block text-gray-600 hover:text-brand-green">
+                              <a href={item.href} className="block text-gray-600 hover:text-brand">
                                 {item.name}
                               </a>
                             </li>
@@ -188,19 +188,19 @@ export default function Navbar() {
       {/* Header */}
       <header
         className={`fixed top-0 left-0 w-full z-50 transition-colors duration-300 ${
-          scrolled ? "bg-brand-green shadow-md" : "bg-transparent"
+          scrolled ? "bg-brand shadow-md" : "bg-transparent"
         }`}
       >
-        {/* Top banner */}
+        {/* Shipping Bar */}
         <p
           className={`flex h-10 items-center justify-center px-4 text-sm font-medium ${
-            scrolled ? "bg-white text-brand-green" : "bg-white/70 text-brand-green backdrop-blur-md"
+            scrolled ? "bg-white text-brand" : "bg-white/70 text-brand backdrop-blur-md"
           }`}
         >
           Free Shipping on All Orders Above ₹599
         </p>
 
-        {/* Navbar main */}
+        {/* Navbar */}
         <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-20 items-center justify-between">
             {/* Left */}
@@ -219,17 +219,14 @@ export default function Navbar() {
 
             {/* Right */}
             <div className="flex items-center space-x-4">
-              {/* Currency toggle */}
+              {/* Currency */}
               <div className="hidden lg:flex cursor-pointer" onClick={toggleCurrency}>
                 <span className="ml-2 text-sm text-white">{currency}</span>
               </div>
 
-              {/* Search desktop */}
+              {/* Desktop search */}
               {!desktopSearch ? (
-                <button
-                  className="hidden lg:block text-white"
-                  onClick={() => setDesktopSearch(true)}
-                >
+                <button className="hidden lg:block text-white" onClick={() => setDesktopSearch(true)}>
                   <MagnifyingGlassIcon className="h-6 w-6" />
                 </button>
               ) : (
@@ -255,8 +252,6 @@ export default function Navbar() {
                       <XMarkIcon className="h-5 w-5" />
                     </button>
                   </div>
-
-                  {/* Results */}
                   {showResults && (
                     <div className="absolute mt-2 w-full bg-white shadow-lg rounded-lg z-50 max-h-72 overflow-y-auto">
                       {results.length > 0 ? (
@@ -277,7 +272,7 @@ export default function Navbar() {
                             <div className="flex-1">
                               <p className="font-medium text-gray-800">{product.title}</p>
                               <p className="text-xs text-gray-500">SKU: {product.sku || "N/A"}</p>
-                              <p className="text-sm font-semibold text-brand-green">
+                              <p className="text-sm font-semibold text-brand">
                                 {currency} {getPrice(product, currency) ?? "—"}
                               </p>
                             </div>
