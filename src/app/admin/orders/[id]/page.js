@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
+import Link from "next/link";
 import {
   card, cardBody, sectionTitle, subText,
   buttonPrimary, buttonGhost,
@@ -166,9 +167,9 @@ export default function OrderDetailsPage() {
 
       {/* Actions */}
       <div className="flex gap-3 mt-6">
-        <a href="/admin/orders" className={buttonGhost}>
+        <Link href="/admin/orders" className={buttonGhost}>
           ← Back to Orders
-        </a>
+        </Link>
         <button className={buttonPrimary}>
           Print Invoice
         </button>
