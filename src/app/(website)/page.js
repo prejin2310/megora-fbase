@@ -1,5 +1,6 @@
 import HeroBanner from "@/components/home/HeroBanner"
 import NewArrivals from "@/components/home/NewArrivals"
+import Reviews from "@/components/home/Reviews"
 import Navbar from "@/components/layout/Navbar"
 
 export default function HomePage() {
@@ -8,6 +9,7 @@ export default function HomePage() {
       <Navbar/>
       <HeroBanner />
       <NewArrivals />
+      <Reviews/>
     </main>
   )
 }

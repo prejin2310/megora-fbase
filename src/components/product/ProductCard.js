@@ -30,7 +30,7 @@ export default function ProductCard({ product }) {
       <div className="group relative bg-white shadow-md overflow-hidden">
         {/* Out of Stock Overlay */}
         {totalStock === 0 && (
-          <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
             <span className="text-white text-lg font-semibold">
               Out of Stock
             </span>
@@ -39,7 +39,7 @@ export default function ProductCard({ product }) {
 
         {/* Limited Stock Badge */}
         {totalStock > 0 && totalStock < 5 && (
-          <span className="absolute top-3 left-3 bg-brand-light text-brand text-xs px-3 py-1 z-10 font-medium border border-brand">
+          <span className="absolute top-3 left-3 bg-brand-light text-brand text-xs px-3 py-1 z-10 font-medium">
             Limited Stock
           </span>
         )}
