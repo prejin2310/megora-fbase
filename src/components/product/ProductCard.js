@@ -9,21 +9,27 @@ import QuickViewModal from "@/components/product/QuickViewModal"
 export default function ProductCard({ product }) {
   const [quickView, setQuickView] = useState(false)
 
-  // Pick thumbnail
+  // ✅ Pick thumbnail
   const thumbnail =
     product.media?.find((m) => m.thumbnail)?.url || "/demo/product1.jpg"
 
-  // Stock calculation
+  // ✅ Stock calculation from new schema
   const totalStock =
-    product.variants?.flatMap((v) => v.options)?.reduce(
-      (sum, o) => sum + (Number(o.stock) || 0),
-      0
-    ) || product.stock || 0
+    product.variants?.reduce((sum, v) => sum + (Number(v.stock) || 0), 0) ||
+    product.stock ||
+    0
 
-  // Prices
-  const price =
-    product.price || product.variants?.[0]?.options?.[0]?.price || 0
-  const dummyPrice = Math.round(price * 1.2)
+  // ✅ Price: take the lowest variant price (for display)
+  const prices = product.variants?.map((v) => v.priceINR) || []
+  const price = prices.length > 0 ? Math.min(...prices) : 0
+  const fakePrices = product.variants?.map((v) => v.fakePriceINR) || []
+  const fakePrice = fakePrices.length > 0 ? Math.max(...fakePrices) : Math.round(price * 1.2)
+
+  // ✅ Extract colors from variant options
+  const colorOptions =
+    product.variants
+      ?.map((v) => v.options.find((o) => o.title?.toLowerCase() === "color")?.name)
+      .filter(Boolean) || []
 
   return (
     <>
@@ -31,9 +37,7 @@ export default function ProductCard({ product }) {
         {/* Out of Stock Overlay */}
         {totalStock === 0 && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
-            <span className="text-white text-lg font-semibold">
-              Out of Stock
-            </span>
+            <span className="text-white text-lg font-semibold">Out of Stock</span>
           </div>
         )}
 
@@ -75,33 +79,27 @@ export default function ProductCard({ product }) {
 
         {/* Info */}
         <div className="p-4">
-          <h3 className="font-medium text-brand text-lg line-clamp-1">
-            {product.title}
-          </h3>
+          <h3 className="font-medium text-brand text-lg line-clamp-1">{product.title}</h3>
           <div className="mt-1 flex items-center gap-2">
             <span className="text-brand font-semibold">₹{price}</span>
-            <span className="line-through text-gray-400 text-sm">
-              ₹{dummyPrice}
-            </span>
+            {fakePrice > price && (
+              <span className="line-through text-gray-400 text-sm">₹{fakePrice}</span>
+            )}
           </div>
 
           {/* Colors */}
-          {product.variants?.some(
-            (v) => v.title.toLowerCase() === "color"
-          ) && (
+          {colorOptions.length > 0 && (
             <div className="mt-2 flex items-center gap-2">
               <span className="text-xs text-gray-600">Colors:</span>
               <div className="flex gap-2">
-                {product.variants
-                  .find((v) => v.title.toLowerCase() === "color")
-                  ?.options.map((option, i) => (
-                    <div
-                      key={i}
-                      className="w-5 h-5 rounded-full border cursor-pointer"
-                      style={{ backgroundColor: getColorHex(option.name) }}
-                      title={option.name}
-                    />
-                  ))}
+                {colorOptions.map((name, i) => (
+                  <div
+                    key={i}
+                    className="w-5 h-5 rounded-full border cursor-pointer"
+                    style={{ backgroundColor: getColorHex(name) }}
+                    title={name}
+                  />
+                ))}
               </div>
             </div>
           )}
@@ -118,7 +116,7 @@ export default function ProductCard({ product }) {
   )
 }
 
-// Helper for color mapping
+// ✅ Helper for color mapping
 function getColorHex(name) {
   switch (name.toLowerCase()) {
     case "emerald":

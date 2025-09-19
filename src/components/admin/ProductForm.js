@@ -535,36 +535,46 @@ export default function ProductForm({
                 ))}
               </div>
 
-              {/* Pricing */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
-                <label className="block">
-                  <span className="text-sm">INR Price</span>
-                  <input
-                    type="number"
-                    className="mt-1 w-full rounded border px-3 py-2"
-                    value={v.priceINR}
-                    onChange={(e) => onVariantINRChange(idx, e.target.value)}
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-sm">Fake MRP</span>
-                  <input
-                    type="number"
-                    className="mt-1 w-full rounded border px-3 py-2"
-                    value={v.fakePriceINR}
-                    onChange={(e) => updateVariant(idx, { fakePriceINR: round(e.target.value) })}
-                  />
-                </label>
-                <label className="block">
-                  <span className="text-sm">Stock</span>
-                  <input
-                    type="number"
-                    className="mt-1 w-full rounded border px-3 py-2"
-                    value={v.stock}
-                    onChange={(e) => updateVariant(idx, { stock: round(e.target.value) })}
-                  />
-                </label>
-              </div>
+{/* Pricing & stock */}
+<div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+  <label className="block">
+    <span className="text-sm">INR Price</span>
+    <input
+      type="number"
+      className="mt-1 w-full rounded border px-3 py-2"
+      value={v.priceINR}
+      onChange={(e) => onVariantINRChange(idx, e.target.value)}
+    />
+  </label>
+  <label className="block">
+    <span className="text-sm">Fake MRP</span>
+    <input
+      type="number"
+      className="mt-1 w-full rounded border px-3 py-2"
+      value={v.fakePriceINR}
+      onChange={(e) => updateVariant(idx, { fakePriceINR: round(e.target.value) })}
+    />
+  </label>
+  <label className="block">
+    <span className="text-sm">Stock</span>
+    <input
+      type="number"
+      className="mt-1 w-full rounded border px-3 py-2"
+      value={v.stock}
+      onChange={(e) => updateVariant(idx, { stock: round(e.target.value) })}
+    />
+  </label>
+</div>
+
+{/* Auto-converted currencies */}
+<div className="grid grid-cols-3 md:grid-cols-6 gap-3 mt-2 text-sm text-gray-600">
+  {CURRENCIES.map((c) => (
+    <div key={c}>
+      <span className="font-medium">{c}:</span> {round(v.prices?.[c] || 0)}
+    </div>
+  ))}
+</div>
+
 
               {/* Variant attributes */}
               <div className="grid grid-cols-2 gap-3 mt-3">

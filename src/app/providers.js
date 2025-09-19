@@ -6,10 +6,13 @@ import { WishlistProvider } from "@/context/WishlistContext"
 
 export default function Providers({ children }) {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <WishlistProvider>{children}</WishlistProvider>
-      </CartProvider>
-    </AuthProvider>
+   <AuthProvider>
+  <CartProvider>
+    <WishlistProvider>
+      {children}
+    </WishlistProvider>
+  </CartProvider>
+</AuthProvider>
+
   )
 }
