@@ -1,360 +1,681 @@
 "use client";
 
-import { useState } from "react";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { storage } from "@/lib/firebase";
+import { useEffect, useMemo, useState } from "react";
+import {
+  collection, doc, getDocs, query, where,
+  addDoc, updateDoc, serverTimestamp, deleteDoc,
+} from "firebase/firestore";
+import {
+  ref as sRef, uploadBytes, getDownloadURL, deleteObject,
+} from "firebase/storage";
+import { db, storage } from "@/lib/firebase";
 import toast from "react-hot-toast";
 
-/**
- * Reusable Product Form
- * - Used by AddProductPage and EditProductPage
- * - Supports multi-step wizard (Details → Media → Variants → Review)
- */
+// ---------- Config ----------
+const CURRENCIES = ["INR", "USD", "EUR", "AED"];
+const FX = { USD: 83, EUR: 90, AED: 22.6 }; // INR conversion
+const FAKE_MARKUP = 0.4; // +40%
+
+// ---------- Helpers ----------
+const slugify = (t = "") =>
+  t.toString().trim().toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 120);
+
+const round = (n) => Math.round(Number(n) || 0);
+
+const buildPriceFromINR = (inr) => {
+  const p = Number(inr) || 0;
+  return {
+    INR: round(p),
+    USD: round(p / FX.USD),
+    EUR: round(p / FX.EUR),
+    AED: round(p / FX.AED),
+  };
+};
+
+const buildFakePrice = (priceObj, override) => {
+  if (override && override > 0) return round(override);
+  return round((priceObj?.INR || 0) * (1 + FAKE_MARKUP));
+};
+
+const pathForUpload = (sku, variantId, file) =>
+  `products/${sku || "no-sku"}/${variantId || "default"}/${Date.now()}_${file.name}`;
+
+const ensureNumber = (v, fallback = 0) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+const deleteByUrl = async (url) => {
+  try {
+    const r = sRef(storage, url);
+    await deleteObject(r);
+  } catch {
+    // ignore if file missing
+  }
+};
+
+// ---------- Component ----------
 export default function ProductForm({
   initialData = null,
-  onSubmit, // function to call with final product data
-  submitLabel = "Save Product",
+  onSaved,
+  mode = "create", // create | edit
 }) {
-  const [step, setStep] = useState(1);
-  const [uploading, setUploading] = useState(null);
-
-  // States
   const [title, setTitle] = useState(initialData?.title || "");
-  const [subtitle, setSubtitle] = useState(initialData?.subtitle || "");
   const [handle, setHandle] = useState(initialData?.handle || "");
+  const [subtitle, setSubtitle] = useState(initialData?.subtitle || "");
   const [description, setDescription] = useState(initialData?.description || "");
   const [sku, setSku] = useState(initialData?.sku || "");
-  const [category, setCategory] = useState(initialData?.category || "");
+  const [status, setStatus] = useState(initialData?.status || "active");
 
-  const [media, setMedia] = useState(
-    initialData?.media?.length
-      ? initialData.media
-      : [{ url: "", thumbnail: false, variant: "" }]
+  // categories
+  const [categoryId, setCategoryId] = useState(initialData?.categoryId || "");
+  const [categories, setCategories] = useState([]);
+
+  // sku error
+  const [skuError, setSkuError] = useState("");
+
+  // global attributes
+  const [attributes, setAttributes] = useState(
+    initialData?.attributes || {
+      weight: "",
+      length: "",
+      width: "",
+      height: "",
+      material: "",
+      hsCode: "",
+      originCountry: "",
+    }
   );
 
+  // variants
   const [variants, setVariants] = useState(
     initialData?.variants?.length
       ? initialData.variants
-      : [{ title: "", options: [{ name: "", price: "", stock: "" }] }]
+      : [
+          {
+            id: "default",
+            options: [{ title: "Color", name: "Gold" }],
+            priceINR: 0,
+            prices: buildPriceFromINR(0),
+            fakePriceINR: buildFakePrice({ INR: 0 }),
+            stock: 0,
+            images: [],
+            attributes: { size: "", weight: "" }, // per variant
+          },
+        ]
   );
 
-  // --- Media Upload ---
-  const handleFileUpload = async (file, i) => {
-    if (!file) return;
-    try {
-      setUploading(i);
-      const folder = sku || `temp-${Date.now()}`;
-      const fileRef = ref(storage, `products/${folder}/${file.name}`);
-      await uploadBytes(fileRef, file);
-      const url = await getDownloadURL(fileRef);
-      const updated = [...media];
-      updated[i].url = url;
-      setMedia(updated);
-      toast.success("Image uploaded ✅");
-    } catch (err) {
-      toast.error("Upload failed: " + err.message);
-    } finally {
-      setUploading(null);
-    }
-  };
+  const [saving, setSaving] = useState(false);
 
-  const handleRemoveMedia = async (i) => {
-    const removed = media[i];
-    setMedia(media.filter((_, idx) => idx !== i));
-    if (removed.url && removed.url.startsWith("https")) {
+  // slug auto
+  useEffect(() => {
+    if (!initialData?.handle || mode === "create") {
+      setHandle(slugify(title));
+    }
+  }, [title]); // eslint-disable-line
+
+  // categories fetch
+  useEffect(() => {
+    (async () => {
       try {
-        const urlPath = decodeURIComponent(removed.url.split("/o/")[1].split("?")[0]);
-        await deleteObject(ref(storage, urlPath));
-      } catch (err) {
-        console.error("Delete failed", err);
+        const snaps = await getDocs(collection(db, "categories"));
+        const list = snaps.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setCategories(list);
+      } catch {
+        toast.error("Failed to load categories");
       }
+    })();
+  }, []);
+
+  // SKU uniqueness check (live debounce)
+  useEffect(() => {
+    if (!sku.trim()) {
+      setSkuError("");
+      return;
+    }
+    const timer = setTimeout(async () => {
+      const qy = query(collection(db, "products"), where("sku", "==", sku.trim()));
+      const snaps = await getDocs(qy);
+      if (snaps.size > 0) {
+        if (!(mode === "edit" && initialData?.id === snaps.docs[0].id)) {
+          setSkuError("This SKU already exists. Please use another.");
+        } else {
+          setSkuError("");
+        }
+      } else {
+        setSkuError("");
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [sku]);
+
+  // ----- handlers -----
+  const updateVariant = (idx, patch) => {
+    setVariants((prev) => {
+      const copy = [...prev];
+      copy[idx] = { ...copy[idx], ...patch };
+      return copy;
+    });
+  };
+
+  const onVariantINRChange = (idx, inrVal) => {
+    const inr = ensureNumber(inrVal);
+    const prices = buildPriceFromINR(inr);
+    const fake = buildFakePrice(prices);
+    updateVariant(idx, { priceINR: inr, prices, fakePriceINR: fake });
+  };
+
+  const addVariant = () => {
+    const n = variants.length + 1;
+    setVariants((v) => [
+      ...v,
+      {
+        id: `var${n}`,
+        options: [{ title: "Color", name: `Option ${n}` }],
+        priceINR: 0,
+        prices: buildPriceFromINR(0),
+        fakePriceINR: buildFakePrice({ INR: 0 }),
+        stock: 0,
+        outOfStock: false,
+        images: [],
+        attributes: { size: "", weight: "" },
+      },
+    ]);
+  };
+
+  const removeVariant = (idx) => {
+    if (!confirm("Remove this variant?")) return;
+    setVariants((v) => v.filter((_, i) => i !== idx));
+  };
+
+  const setThumb = (vidx, imgIdx) => {
+    setVariants((v) =>
+      v.map((va, i) =>
+        i !== vidx
+          ? va
+          : {
+              ...va,
+              images: va.images.map((im, j) => ({ ...im, thumbnail: j === imgIdx })),
+            }
+      )
+    );
+  };
+
+  const onUpload = async (vidx, files) => {
+    if (!files?.length) return;
+    if (!sku) {
+      toast.error("Please enter SKU before uploading images.");
+      return;
+    }
+    const uploading = toast.loading("Uploading images...");
+    try {
+      const uploaded = [];
+      for (const f of files) {
+        const fp = pathForUpload(sku, variants[vidx].id, f);
+        const r = sRef(storage, fp);
+        await uploadBytes(r, f);
+        const url = await getDownloadURL(r);
+        uploaded.push({ url, thumbnail: false });
+      }
+      setVariants((v) => {
+        const copy = [...v];
+        copy[vidx] = { ...copy[vidx], images: [...copy[vidx].images, ...uploaded] };
+        return copy;
+      });
+      toast.success("Images uploaded");
+    } catch {
+      toast.error("Upload failed");
+    } finally {
+      toast.dismiss(uploading);
     }
   };
 
-  // --- Variant helpers ---
-  const handleVariantTitleChange = (i, value) => {
-    const updated = [...variants];
-    updated[i].title = value;
-    setVariants(updated);
-  };
-  const handleOptionChange = (vi, oi, field, value) => {
-    const updated = [...variants];
-    updated[vi].options[oi][field] = value;
-    setVariants(updated);
-  };
-  const handleAddOption = (vi) => {
-    const updated = [...variants];
-    updated[vi].options.push({ name: "", price: "", stock: "" });
-    setVariants(updated);
-  };
-  const handleAddVariant = () => {
-    setVariants([...variants, { title: "", options: [{ name: "", price: "", stock: "" }] }]);
+  const deleteImage = async (vidx, imgIdx) => {
+    const { url } = variants[vidx].images[imgIdx];
+    if (!confirm("Delete this image?")) return;
+    const t = toast.loading("Deleting image...");
+    try {
+      await deleteByUrl(url);
+      setVariants((v) => {
+        const copy = [...v];
+        copy[vidx] = {
+          ...copy[vidx],
+          images: copy[vidx].images.filter((_, i) => i !== imgIdx),
+        };
+        return copy;
+      });
+      toast.success("Deleted");
+    } catch {
+      toast.error("Delete failed");
+    } finally {
+      toast.dismiss(t);
+    }
   };
 
-  // --- Final Submit ---
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const product = {
-      title,
-      subtitle,
-      handle,
+  const serialize = () => {
+    const media = [];
+    variants.forEach((v) => {
+      v.images.forEach((im) =>
+        media.push({
+          url: im.url,
+          thumbnail: !!im.thumbnail,
+          variant: v.id || "",
+        })
+      );
+    });
+
+    return {
+      title: title.trim(),
+      subtitle: subtitle.trim(),
       description,
-      sku,
-      category,
-      media: media.filter((m) => m.url.trim() !== ""),
-      variants: variants.filter((v) => v.title.trim() !== ""),
+      handle: handle.trim(),
+      sku: sku.trim(),
+      status,
+      categoryId: categoryId || "",
+      media,
+      variants: variants.map((v) => ({
+        id: v.id,
+        options: v.options,
+        priceINR: round(v.priceINR),
+        prices: {
+          INR: round(v.prices?.INR),
+          USD: round(v.prices?.USD),
+          EUR: round(v.prices?.EUR),
+          AED: round(v.prices?.AED),
+        },
+        fakePriceINR: round(v.fakePriceINR),
+        stock: round(v.stock),
+        images: v.images,
+        attributes: v.attributes || {},
+      })),
+      attributes,
     };
-    await onSubmit(product);
   };
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    if (!title || !sku) {
+      toast.error("Title and SKU are required.");
+      return;
+    }
+    if (skuError) {
+      toast.error("Fix SKU error before saving.");
+      return;
+    }
+    if (!categoryId) {
+      toast.error("Please choose a category.");
+      return;
+    }
+
+    if (!confirm(mode === "create" ? "Create this product?" : "Save changes?")) return;
+
+    setSaving(true);
+    try {
+      const payload = serialize();
+      if (mode === "create") {
+        const docRef = await addDoc(collection(db, "products"), {
+          ...payload,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        toast.success("Product added");
+        onSaved?.(docRef.id);
+      } else {
+        const ref = doc(db, "products", initialData.id);
+        await updateDoc(ref, { ...payload, updatedAt: serverTimestamp() });
+        toast.success("Product updated");
+        onSaved?.(initialData.id);
+      }
+    } catch {
+      toast.error("Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onDeleteAll = async () => {
+    if (mode !== "edit") return;
+    if (!confirm("Delete this product and its images?")) return;
+    const loading = toast.loading("Deleting product...");
+    try {
+      const allUrls = [];
+      variants.forEach((v) => v.images.forEach((im) => allUrls.push(im.url)));
+      await Promise.all(allUrls.map(deleteByUrl));
+      await deleteDoc(doc(db, "products", initialData.id));
+      toast.success("Deleted product");
+      onSaved?.(null);
+    } catch {
+      toast.error("Delete failed");
+    } finally {
+      toast.dismiss(loading);
+    }
+  };
+
+  const mainThumbUrl = useMemo(() => {
+    for (const v of variants) {
+      const t = v.images.find((i) => i.thumbnail);
+      if (t) return t.url;
+    }
+    for (const v of variants) {
+      if (v.images[0]?.url) return v.images[0].url;
+    }
+    return "";
+  }, [variants]);
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" && step < 4) e.preventDefault();
-      }}
-      className="space-y-6"
-    >
-      {/* Step Indicators */}
-      <div className="flex justify-between mb-6">
-        {["Details", "Media", "Variants", "Review"].map((label, idx) => {
-          const current = idx + 1;
-          return (
-            <div key={idx} className="flex-1 text-center">
-              <div
-                className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center ${
-                  step >= current ? "bg-brand text-white" : "bg-gray-200"
-                }`}
-              >
-                {current}
-              </div>
-              <p className="text-xs mt-1">{label}</p>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Step 1: Details */}
-      {step === 1 && (
-        <section className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm">Title *</label>
-              <input
-                className="w-full border p-2 rounded"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm">Subtitle</label>
-              <input
-                className="w-full border p-2 rounded"
-                value={subtitle}
-                onChange={(e) => setSubtitle(e.target.value)}
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm">Handle (slug)</label>
+    <form onSubmit={onSubmit} className="space-y-6">
+      {/* Title, Slug, SKU */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2 space-y-3">
+          <label className="block">
+            <span className="text-sm font-medium">Title</span>
             <input
-              className="w-full border p-2 rounded"
-              value={handle}
-              onChange={(e) => setHandle(e.target.value)}
+              className="mt-1 w-full rounded border px-3 py-2"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
             />
+          </label>
+
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="text-sm font-medium">Slug</span>
+              <input
+                className="mt-1 w-full rounded border px-3 py-2"
+                value={handle}
+                onChange={(e) => setHandle(slugify(e.target.value))}
+              />
+              <p className="text-xs text-gray-500 mt-1">Preview: /product/{handle || "slug"}</p>
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-medium">SKU</span>
+              <input
+                className={`mt-1 w-full rounded border px-3 py-2 ${
+                  skuError ? "border-red-500" : ""
+                }`}
+                value={sku}
+                onChange={(e) => setSku(e.target.value.trim())}
+                required
+              />
+              {skuError && <p className="text-xs text-red-600 mt-1">{skuError}</p>}
+            </label>
           </div>
-          <div>
-            <label className="block text-sm">Description</label>
+
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="text-sm font-medium">Category</span>
+              <select
+                className="mt-1 w-full rounded border px-3 py-2"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+              >
+                <option value="">Select...</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name || c.id}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-medium">Status</span>
+              <select
+                className="mt-1 w-full rounded border px-3 py-2"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
+                <option value="active">Active</option>
+                <option value="draft">Draft</option>
+                <option value="archived">Archived</option>
+              </select>
+            </label>
+          </div>
+
+          <label className="block">
+            <span className="text-sm font-medium">Subtitle</span>
+            <input
+              className="mt-1 w-full rounded border px-3 py-2"
+              value={subtitle}
+              onChange={(e) => setSubtitle(e.target.value)}
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-sm font-medium">Description</span>
             <textarea
-              className="w-full border p-2 rounded"
-              rows="3"
+              className="mt-1 w-full rounded border px-3 py-2 min-h-[120px]"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
-          </div>
-          <div>
-            <label className="block text-sm">SKU *</label>
-            <input
-              className="w-full border p-2 rounded"
-              value={sku}
-              onChange={(e) => setSku(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="block text-sm">Category</label>
-            <select
-              className="w-full border p-2 rounded"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              <option value="">Select category</option>
-              <option value="necklace">Necklace</option>
-              <option value="earrings">Earrings</option>
-              <option value="haram">Haram</option>
-              <option value="bridal">Bridal Combo</option>
-              <option value="adstone">AD Stone</option>
-              <option value="antitarnish">Anti Tarnish</option>
-              <option value="ring">Ring</option>
-              <option value="earning">Earring</option>
-            </select>
-          </div>
-        </section>
-      )}
+          </label>
+        </div>
 
-      {/* Step 2: Media */}
-      {step === 2 && (
-        <section>
-          {media.map((m, i) => (
-            <div key={i} className="flex flex-col md:flex-row items-center gap-3 mb-3">
-              {m.url ? (
-                <img src={m.url} alt="preview" className="w-20 h-20 object-cover rounded border" />
-              ) : (
-                <div className="w-20 h-20 bg-gray-100 border flex items-center justify-center text-xs">
-                  No Image
-                </div>
-              )}
-              <label className="cursor-pointer px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">
-                {uploading === i ? "Uploading..." : "Upload"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleFileUpload(e.target.files[0], i)}
-                />
-              </label>
-              <input
-                placeholder="Variant (optional)"
-                className="border p-2 rounded md:w-40"
-                value={m.variant}
-                onChange={(e) => {
-                  const updated = [...media];
-                  updated[i].variant = e.target.value;
-                  setMedia(updated);
-                }}
-              />
-              <label className="flex items-center gap-1 text-sm">
-                <input
-                  type="checkbox"
-                  checked={m.thumbnail}
-                  onChange={(e) => {
-                    const updated = [...media];
-                    updated.forEach((m, idx) => (updated[idx].thumbnail = idx === i));
-                    setMedia(updated);
-                  }}
-                />
-                Thumbnail
-              </label>
-              <button
-                type="button"
-                onClick={() => handleRemoveMedia(i)}
-                className="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => setMedia([...media, { url: "", thumbnail: false, variant: "" }])}
-            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm"
-          >
-            + Add Image
-          </button>
-        </section>
-      )}
+        {/* Live preview */}
+        <div className="border rounded p-3">
+          <div className="aspect-square bg-gray-100 rounded overflow-hidden mb-3">
+            {mainThumbUrl ? (
+              <img src={mainThumbUrl} alt="thumb" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full grid place-items-center text-gray-400 text-sm">
+                No image
+              </div>
+            )}
+          </div>
+          <div className="text-sm">
+            <div className="font-semibold">{title || "Product Title"}</div>
+            <div className="text-gray-600">{subtitle}</div>
+            <div className="mt-2 space-y-1">
+              {variants.map((v) => (
+                <div key={v.id} className="flex items-center justify-between">
+                  <span>
+                    {v.options.map((o) => `${o.title}: ${o.name}`).join(", ")}
+                  </span>
+                  <span className="font-medium">
+                    ₹{round(v.prices?.INR)} (MRP ₹{round(v.fakePriceINR)})
+                    {v.stock <= 0 && <span className="ml-2 text-red-600">(Out of Stock)</span>}
 
-      {/* Step 3: Variants */}
-      {step === 3 && (
-        <section>
-          {variants.map((v, vi) => (
-            <div key={vi} className="border p-3 rounded mb-3">
-              <label className="block text-sm mb-2">Variant Title</label>
-              <input
-                placeholder="e.g. Color"
-                className="w-full border p-2 rounded mb-3"
-                value={v.title}
-                onChange={(e) => handleVariantTitleChange(vi, e.target.value)}
-              />
-              {v.options.map((opt, oi) => (
-                <div key={oi} className="grid grid-cols-3 gap-2 mb-2">
-                  <input
-                    placeholder="Option (e.g. Ruby)"
-                    className="border p-2 rounded"
-                    value={opt.name}
-                    onChange={(e) => handleOptionChange(vi, oi, "name", e.target.value)}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Price"
-                    className="border p-2 rounded"
-                    value={opt.price}
-                    onChange={(e) => handleOptionChange(vi, oi, "price", e.target.value)}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Stock"
-                    className="border p-2 rounded"
-                    value={opt.stock}
-                    onChange={(e) => handleOptionChange(vi, oi, "stock", e.target.value)}
-                  />
+                  </span>
                 </div>
               ))}
-              <button
-                type="button"
-                onClick={() => handleAddOption(vi)}
-                className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm"
-              >
-                + Add Option
-              </button>
             </div>
-          ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Variants */}
+      <div className="border rounded p-3">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold">Variants</h3>
           <button
             type="button"
-            onClick={handleAddVariant}
-            className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300"
+            onClick={addVariant}
+            className="px-3 py-1.5 rounded bg-gray-900 text-white"
           >
             + Add Variant
           </button>
-        </section>
-      )}
+        </div>
 
-      {/* Step 4: Review */}
-      {step === 4 && (
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold">Review Product</h2>
-          <p><strong>Title:</strong> {title}</p>
-          <p><strong>SKU:</strong> {sku}</p>
-          <p><strong>Category:</strong> {category || "Not selected"}</p>
-          <p><strong>Variants:</strong> {variants.length}</p>
-          <p><strong>Images:</strong> {media.filter((m) => m.url).length}</p>
-        </section>
-      )}
+        <div className="space-y-6">
+          {variants.map((v, idx) => (
+            <div key={idx} className="border rounded p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="font-medium">Variant #{idx + 1}</div>
+                {variants.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeVariant(idx)}
+                    className="text-red-600 text-sm"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
 
-      {/* Navigation */}
-      <div className="flex justify-between mt-6">
-        {step > 1 && (
+              {/* Options */}
+              <div className="grid grid-cols-2 gap-3">
+                {v.options.map((o, oi) => (
+                  <label key={oi} className="block">
+                    <span className="text-sm">{o.title}</span>
+                    <input
+                      className="mt-1 w-full rounded border px-3 py-2"
+                      value={o.name}
+                      onChange={(e) => {
+                        const newOpts = [...v.options];
+                        newOpts[oi].name = e.target.value;
+                        updateVariant(idx, { options: newOpts });
+                      }}
+                    />
+                  </label>
+                ))}
+              </div>
+
+              {/* Pricing */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+                <label className="block">
+                  <span className="text-sm">INR Price</span>
+                  <input
+                    type="number"
+                    className="mt-1 w-full rounded border px-3 py-2"
+                    value={v.priceINR}
+                    onChange={(e) => onVariantINRChange(idx, e.target.value)}
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-sm">Fake MRP</span>
+                  <input
+                    type="number"
+                    className="mt-1 w-full rounded border px-3 py-2"
+                    value={v.fakePriceINR}
+                    onChange={(e) => updateVariant(idx, { fakePriceINR: round(e.target.value) })}
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-sm">Stock</span>
+                  <input
+                    type="number"
+                    className="mt-1 w-full rounded border px-3 py-2"
+                    value={v.stock}
+                    onChange={(e) => updateVariant(idx, { stock: round(e.target.value) })}
+                  />
+                </label>
+              </div>
+
+              {/* Variant attributes */}
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <label className="block">
+                  <span className="text-sm">Size</span>
+                  <input
+                    className="mt-1 w-full rounded border px-3 py-2"
+                    value={v.attributes?.size || ""}
+                    onChange={(e) =>
+                      updateVariant(idx, { attributes: { ...v.attributes, size: e.target.value } })
+                    }
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-sm">Weight</span>
+                  <input
+                    className="mt-1 w-full rounded border px-3 py-2"
+                    value={v.attributes?.weight || ""}
+                    onChange={(e) =>
+                      updateVariant(idx, { attributes: { ...v.attributes, weight: e.target.value } })
+                    }
+                  />
+                </label>
+              </div>
+
+              {/* Images */}
+              <div className="mt-4">
+                <div className="flex items-center justify-between">
+                  <div className="font-medium">Images</div>
+                  <label className="cursor-pointer text-sm px-3 py-1.5 rounded bg-gray-900 text-white">
+                    Upload
+                    <input
+                      type="file"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => onUpload(idx, e.target.files)}
+                      accept="image/*"
+                    />
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mt-3">
+                  {v.images.map((im, j) => (
+                    <div key={j} className="relative border rounded overflow-hidden">
+                      <img src={im.url} alt="" className="w-full h-28 object-cover" />
+                      <div className="absolute left-1 top-1">
+                        <button
+                          type="button"
+                          onClick={() => setThumb(idx, j)}
+                          className={`text-xs px-2 py-0.5 rounded ${
+                            im.thumbnail ? "bg-green-600 text-white" : "bg-white"
+                          }`}
+                        >
+                          {im.thumbnail ? "Thumbnail" : "Make Thumb"}
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => deleteImage(idx, j)}
+                        className="absolute right-1 top-1 text-xs px-2 py-0.5 rounded bg-white/90"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  {!v.images.length && (
+                    <div className="col-span-2 md:col-span-6 text-sm text-gray-500">
+                      No images yet.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Global attributes */}
+      <div className="border rounded p-3 space-y-3">
+        <h3 className="font-semibold">Attributes (Global, Optional)</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {Object.keys(attributes).map((key) => (
+            <label key={key} className="block">
+              <span className="text-sm capitalize">{key}</span>
+              <input
+                className="mt-1 w-full rounded border px-3 py-2"
+                value={attributes[key]}
+                onChange={(e) => setAttributes({ ...attributes, [key]: e.target.value })}
+              />
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* footer */}
+      <div className="flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={saving}
+          className="px-4 py-2 rounded bg-emerald-700 text-white disabled:opacity-60"
+        >
+          {saving ? "Saving..." : mode === "create" ? "Add Product" : "Save Changes"}
+        </button>
+
+        {mode === "edit" && (
           <button
             type="button"
-            onClick={() => setStep(step - 1)}
-            className="px-4 py-2 border rounded"
+            onClick={onDeleteAll}
+            className="px-4 py-2 rounded bg-red-600 text-white"
           >
-            Back
-          </button>
-        )}
-        {step < 4 ? (
-          <button
-            type="button"
-            onClick={() => setStep(step + 1)}
-            className="px-4 py-2 bg-brand text-white rounded"
-          >
-            Next
-          </button>
-        ) : (
-          <button
-            type="submit"
-            className="px-6 py-2 bg-brand text-white rounded hover:bg-brand-dark"
-          >
-            {submitLabel}
+            Delete Product
           </button>
         )}
       </div>

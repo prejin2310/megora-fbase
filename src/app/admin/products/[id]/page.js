@@ -1,55 +1,54 @@
 "use client";
+
 import { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import ProductForm from "@/components/admin/ProductForm";
 import { useRouter, useParams } from "next/navigation";
 import toast from "react-hot-toast";
-import ProductForm from "../../../../components/admin/ProductForm";
 
 export default function EditProductPage() {
-  const router = useRouter();
   const { id } = useParams();
-  const [initialData, setInitialData] = useState(null);
+  const router = useRouter();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    (async () => {
       try {
         const snap = await getDoc(doc(db, "products", id));
-        if (snap.exists()) {
-          setInitialData(snap.data());
-        } else {
+        if (!snap.exists()) {
           toast.error("Product not found");
-          router.push("/admin/products");
+          router.replace("/admin/products");
+          return;
         }
-      } catch (err) {
-        toast.error("Error loading product");
+        setData({ id: snap.id, ...snap.data() });
+      } catch (e) {
+        console.error(e);
+        toast.error("Failed to load");
+        router.replace("/admin/products");
+      } finally {
+        setLoading(false);
       }
-    };
-    fetchProduct();
-  }, [id, router]);
+    })();
+  }, [id]); // eslint-disable-line
 
-  const handleUpdate = async (product) => {
-    try {
-      await updateDoc(doc(db, "products", id), {
-        ...product,
-        updatedAt: serverTimestamp(),
-      });
-      toast.success("Product updated 🎉");
-      router.push("/admin/products");
-    } catch (err) {
-      toast.error("Update failed: " + err.message);
-    }
-  };
-
-  if (!initialData) return <p>Loading...</p>;
+  if (loading) return <div className="p-6">Loading...</div>;
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold text-brand mb-6">Edit Product</h1>
+    <div className="p-4 md:p-6">
+      <h1 className="text-xl font-semibold mb-4">Edit: {data?.title}</h1>
       <ProductForm
-        initialData={initialData}
-        onSubmit={handleUpdate}
-        submitLabel="Update Product"
+        mode="edit"
+        initialData={data}
+        onSaved={(pid) => {
+          if (!pid) {
+            // deleted
+            router.push("/admin/products");
+          } else {
+            // stay on page
+          }
+        }}
       />
     </div>
   );

@@ -1,388 +1,232 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { db, storage } from "@/lib/firebase";
+import { useEffect, useMemo, useState } from "react";
 import {
   collection,
   getDocs,
-  deleteDoc,
-  doc,
-  updateDoc,
+  orderBy,
+  query,
+  limit,
+  startAfter,
+  endBefore,
+  limitToLast,
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db } from "@/lib/firebase";
+import Link from "next/link";
 import toast from "react-hot-toast";
 
-import {
-  card, cardBody, sectionTitle, subText,
-  inputBase, selectBase, buttonPrimary, buttonGhost,
-  tableWrap, tableBase, thBase, tdBase, rowHover
-} from "@/components/admin/ui";
+const PAGE_SIZE = 8;
 
-export default function ProductsPage() {
-  const [products, setProducts] = useState([]);
-  const [filtered, setFiltered] = useState([]);
+export default function ProductsListPage() {
+  const [items, setItems] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [cat, setCat] = useState("");
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("skuAsc"); // default sort by SKU Asc
   const [loading, setLoading] = useState(true);
 
-  const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [uploading, setUploading] = useState(null);
-  const [expanded, setExpanded] = useState(null);
+  // pagination
+  const [lastDoc, setLastDoc] = useState(null);
+  const [firstDoc, setFirstDoc] = useState(null);
+  const [pageStack, setPageStack] = useState([]);
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-
-  const fetchProducts = async () => {
-    setLoading(true);
-    try {
-      const snapshot = await getDocs(collection(db, "products"));
-      const productList = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setProducts(productList);
-      setFiltered(productList);
-    } catch (err) {
-      toast.error("Failed to fetch products");
-    }
-    setLoading(false);
-  };
-
-  const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this product?")) return;
-    try {
-      await deleteDoc(doc(db, "products", id));
-      toast.success("Product deleted");
-      fetchProducts();
-    } catch (err) {
-      toast.error("Delete failed");
-    }
-  };
-
-  const handleUpload = async (file, productId) => {
-    if (!file) return;
-    try {
-      setUploading(productId);
-      const fileRef = ref(storage, `products/${productId}/${file.name}`);
-      await uploadBytes(fileRef, file);
-      const url = await getDownloadURL(fileRef);
-
-      const productRef = doc(db, "products", productId);
-      const product = products.find((p) => p.id === productId);
-      const media = product.media || [];
-      const updatedMedia = [...media, { url, thumbnail: false }];
-
-      await updateDoc(productRef, { media: updatedMedia });
-
-      toast.success("Image uploaded ✅");
-      fetchProducts();
-    } catch (err) {
-      toast.error("Upload failed: " + err.message);
-    } finally {
-      setUploading(null);
-    }
-  };
-
-  const handleVariantUpdate = async (productId, vi, oi, field, value) => {
-    try {
-      const productRef = doc(db, "products", productId);
-      const product = products.find((p) => p.id === productId);
-      if (!product) return;
-
-      const updatedVariants = [...(product.variants || [])];
-      updatedVariants[vi].options[oi][field] = value;
-
-      await updateDoc(productRef, { variants: updatedVariants });
-      toast.success("Variant updated ✅");
-
-      fetchProducts();
-    } catch (err) {
-      toast.error("Failed to update variant: " + err.message);
-    }
-  };
-
-  // Filtering
+  // fetch categories
   useEffect(() => {
-    let result = [...products];
-
-    if (search.trim() !== "") {
-      result = result.filter(
-        (p) =>
-          p.title?.toLowerCase().includes(search.toLowerCase()) ||
-          p.sku?.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-
-    if (categoryFilter !== "all") {
-      result = result.filter(
-        (p) => p.category?.toLowerCase() === categoryFilter.toLowerCase()
-      );
-    }
-
-    setFiltered(result);
-    setCurrentPage(1);
-  }, [search, categoryFilter, products]);
-
-  useEffect(() => {
-    fetchProducts();
+    (async () => {
+      try {
+        const snaps = await getDocs(collection(db, "categories"));
+        setCategories(snaps.docs.map((d) => ({ id: d.id, ...d.data() })));
+      } catch {
+        toast.error("Failed to load categories");
+      }
+    })();
   }, []);
 
-  const categories = [
-    ...new Set(products.map((p) => p.category).filter(Boolean)),
-  ];
+  const fetchProducts = async (direction = "first") => {
+    setLoading(true);
+    try {
+      let q = query(collection(db, "products"), orderBy("title"), limit(PAGE_SIZE));
 
-  // Pagination logic
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filtered.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+      if (direction === "next" && lastDoc) {
+        q = query(collection(db, "products"), orderBy("title"), startAfter(lastDoc), limit(PAGE_SIZE));
+      } else if (direction === "prev" && firstDoc) {
+        q = query(
+          collection(db, "products"),
+          orderBy("title"),
+          endBefore(firstDoc),
+          limitToLast(PAGE_SIZE)
+        );
+      }
+
+      const snaps = await getDocs(q);
+      let list = snaps.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+      if (list.length > 0) {
+        setFirstDoc(snaps.docs[0]);
+        setLastDoc(snaps.docs[snaps.docs.length - 1]);
+      }
+
+      if (direction === "next") {
+        setPageStack((s) => [...s, firstDoc]);
+      } else if (direction === "prev") {
+        setPageStack((s) => s.slice(0, -1));
+      } else {
+        setPageStack([]);
+      }
+
+      setItems(list);
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to load products");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts("first");
+  }, []);
+
+  // filtering + sorting
+  const filtered = useMemo(() => {
+    let r = [...items];
+    if (cat) r = r.filter((x) => (x.categoryId || "") === cat);
+    if (search.trim()) {
+      const s = search.trim().toLowerCase();
+      r = r.filter(
+        (x) =>
+          x.title?.toLowerCase().includes(s) ||
+          x.sku?.toLowerCase().includes(s) ||
+          x.handle?.toLowerCase().includes(s)
+      );
+    }
+
+    // ✅ Apply sorting
+    if (sortBy === "skuAsc" || sortBy === "skuDesc") {
+      r.sort((a, b) => {
+        const aNum = parseInt((a.sku || "").replace("MJ-", ""), 10) || 0;
+        const bNum = parseInt((b.sku || "").replace("MJ-", ""), 10) || 0;
+        return sortBy === "skuAsc" ? aNum - bNum : bNum - aNum;
+      });
+    } else if (sortBy === "title") {
+      r.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+    }
+
+    return r;
+  }, [items, cat, search, sortBy]);
+
+  const thumbOf = (p) => {
+    const m = p.media || [];
+    const t = m.find((i) => i.thumbnail) || m[0];
+    return t?.url || "";
+  };
+
+  const isOutOfStock = (p) => {
+    if (!p.variants?.length) return false;
+    return p.variants.every((v) => (v.stock || 0) <= 0);
+  };
 
   return (
-    <div className="bg-gray-50 min-h-screen p-4 md:p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">Products</h1>
-          <p className={subText}>View, edit and manage your product catalog.</p>
-        </div>
-        <Link href="/admin/products/add" className={buttonPrimary}>
-          + Add Product
+    <div className="p-4 md:p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl font-semibold">Products</h1>
+        <Link
+          href="/admin/products/add"
+          className="px-3 py-2 rounded bg-emerald-700 text-white"
+        >
+          + Add
         </Link>
       </div>
 
-      {/* Filters */}
-      <section className={`${card} mb-6`}>
-        <div className={cardBody}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Search</label>
-              <input
-                type="text"
-                placeholder="Search by title or SKU..."
-                className={inputBase}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
-              <select
-                className={selectBase}
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+        <input
+          placeholder="Search by title / sku / slug"
+          className="rounded border px-3 py-2"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select
+          className="rounded border px-3 py-2"
+          value={cat}
+          onChange={(e) => setCat(e.target.value)}
+        >
+          <option value="">All categories</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name || c.id}
+            </option>
+          ))}
+        </select>
+        <select
+          className="rounded border px-3 py-2"
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+        >
+          <option value="skuAsc">Sort by SKU (Ascending)</option>
+          <option value="skuDesc">Sort by SKU (Descending)</option>
+          <option value="title">Sort by Title (A–Z)</option>
+        </select>
+        <button
+          onClick={() => fetchProducts("first")}
+          className="rounded border px-3 py-2"
+        >
+          Refresh
+        </button>
+      </div>
+
+      {loading ? (
+        <div>Loading…</div>
+      ) : filtered.length === 0 ? (
+        <div className="text-gray-500">No products.</div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {filtered.map((p) => (
+              <Link
+                key={p.id}
+                href={`/admin/products/${p.id}`}
+                className="border rounded overflow-hidden hover:shadow relative"
               >
-                <option value="all">All Categories</option>
-                {categories.map((cat, i) => (
-                  <option key={i} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-      </section>
+                <div className="aspect-square bg-gray-100">
+                  <img
+                    src={thumbOf(p) || "/placeholder.png"}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="p-2">
+                  <div className="text-sm font-medium line-clamp-1">{p.title}</div>
+                  <div className="text-xs text-gray-500">{p.sku}</div>
+                  <div className="text-xs">{p.status}</div>
+                </div>
 
-      {/* Table */}
-      <section className={card}>
-        <div className={cardBody}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className={sectionTitle}>All Products</h2>
-            <span className={subText}>{filtered.length} result(s)</span>
-          </div>
-
-          <div className={tableWrap}>
-            <table className={tableBase}>
-              <thead className="sticky top-0 bg-white">
-                <tr>
-                  <th className={thBase}>Product</th>
-                  <th className={thBase}>Category</th>
-                  <th className={thBase}>SKU</th>
-                  <th className={thBase}>Price</th>
-                  <th className={thBase}>Stock</th>
-                  <th className={thBase}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr><td className={tdBase} colSpan={6}>Loading…</td></tr>
-                ) : currentItems.length === 0 ? (
-                  <tr><td className={tdBase} colSpan={6}>No products found.</td></tr>
-                ) : (
-                  currentItems.map((p) => {
-                    const thumb =
-                      p.media?.find((m) => m.thumbnail)?.url ||
-                      p.media?.[0]?.url ||
-                      "/logo.png";
-
-                    const stock =
-                      p.stock ??
-                      p.variants?.reduce(
-                        (sum, v) =>
-                          sum +
-                          v.options?.reduce(
-                            (osum, o) => osum + (parseInt(o.stock) || 0),
-                            0
-                          ),
-                        0
-                      ) ??
-                      0;
-
-                    const price =
-                      p.price ??
-                      (p.variants?.flatMap((v) =>
-                        v.options.map((o) => parseFloat(o.price) || 0)
-                      ) || [0]);
-                    const displayPrice = Array.isArray(price)
-                      ? `₹${Math.min(...price)}+`
-                      : `₹${price}`;
-
-                    return (
-                      <>
-                        <tr key={p.id} className={rowHover}>
-                          <td className={tdBase}>
-                            <div className="flex items-center gap-3">
-                              <Image
-                                src={thumb}
-                                alt={p.title}
-                                width={50}
-                                height={50}
-                                className="rounded-lg object-cover border"
-                              />
-                              <span className="font-medium text-gray-900">{p.title}</span>
-                            </div>
-                          </td>
-                          <td className={tdBase}>{p.category || "-"}</td>
-                          <td className={tdBase}>{p.sku}</td>
-                          <td className={tdBase}>{displayPrice}</td>
-                          <td className={tdBase}>{stock}</td>
-                          <td className={tdBase}>
-                            <div className="flex flex-wrap gap-2">
-                              <Link href={`/admin/products/${p.id}`} className={buttonGhost}>
-                                Edit
-                              </Link>
-                              <button
-                                onClick={() => handleDelete(p.id)}
-                                className="text-red-600 hover:underline text-sm"
-                              >
-                                Delete
-                              </button>
-                              <label className="px-3 py-1 border rounded-lg text-xs cursor-pointer bg-gray-50 hover:bg-gray-100">
-                                {uploading === p.id ? "Uploading…" : "Upload"}
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  onChange={(e) => handleUpload(e.target.files[0], p.id)}
-                                  disabled={uploading === p.id}
-                                />
-                              </label>
-                              {p.variants?.length > 0 && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setExpanded(expanded === p.id ? null : p.id)
-                                  }
-                                  className="px-3 py-1 border rounded-lg text-xs bg-gray-50 hover:bg-gray-100"
-                                >
-                                  {expanded === p.id ? "Hide Variants" : "Show Variants"}
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-
-                        {/* Variants */}
-                        {expanded === p.id && p.variants?.length > 0 && (
-                          <tr>
-                            <td colSpan="6" className="bg-gray-50 p-4">
-                              <div className="overflow-x-auto">
-                                <table className="w-full border text-sm">
-                                  <thead className="bg-gray-100">
-                                    <tr>
-                                      <th className="p-2 text-left">Variant</th>
-                                      <th className="p-2 text-left">Option</th>
-                                      <th className="p-2 text-left">Price</th>
-                                      <th className="p-2 text-left">Stock</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {p.variants.map((v, vi) =>
-                                      v.options.map((o, oi) => (
-                                        <tr key={`${vi}-${oi}`} className="border-b">
-                                          <td className="p-2">{v.title}</td>
-                                          <td className="p-2">{o.name}</td>
-                                          <td className="p-2">
-                                            <input
-                                              type="number"
-                                              className={inputBase + " w-24 h-8 text-sm"}
-                                              defaultValue={o.price}
-                                              onBlur={(e) =>
-                                                handleVariantUpdate(
-                                                  p.id,
-                                                  vi,
-                                                  oi,
-                                                  "price",
-                                                  e.target.value
-                                                )
-                                              }
-                                            />
-                                          </td>
-                                          <td className="p-2">
-                                            <input
-                                              type="number"
-                                              className={inputBase + " w-24 h-8 text-sm"}
-                                              defaultValue={o.stock}
-                                              onBlur={(e) =>
-                                                handleVariantUpdate(
-                                                  p.id,
-                                                  vi,
-                                                  oi,
-                                                  "stock",
-                                                  e.target.value
-                                                )
-                                              }
-                                            />
-                                          </td>
-                                        </tr>
-                                      ))
-                                    )}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </>
-                    );
-                  })
+                {isOutOfStock(p) && (
+                  <span className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-0.5 rounded">
+                    Out of Stock
+                  </span>
                 )}
-              </tbody>
-            </table>
+              </Link>
+            ))}
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-6">
-              {Array.from({ length: totalPages }, (_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`px-3 py-1 rounded-lg text-sm ${
-                    currentPage === i + 1
-                      ? "bg-gray-900 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+          <div className="flex justify-center gap-4 mt-6">
+            <button
+              onClick={() => fetchProducts("prev")}
+              disabled={pageStack.length === 0}
+              className="px-4 py-2 rounded border disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => fetchProducts("next")}
+              disabled={!lastDoc}
+              className="px-4 py-2 rounded border disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

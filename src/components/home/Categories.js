@@ -15,54 +15,57 @@ export default function Categories() {
   useEffect(() => {
     const q = query(collection(db, "categories"))
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const cats = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
-      setCategories(cats.slice(0, 6)) // ✅ Only 6 categories
+      const cats = snapshot.docs.map((doc) => {
+        const data = doc.data()
+        return {
+          id: doc.id,
+          name: data.name,
+          slug: data.slug,
+          imageUrl: data.imageUrl || DEFAULT_IMAGE,
+        }
+      })
+      setCategories(cats.slice(0, 6)) // ✅ show only 6
     })
 
     return () => unsubscribe()
   }, [])
 
   return (
-    <section className="bg-brand-light py-16">
-      <div className="mx-auto max-w-7xl px-0 sm:px-6 lg:px-8">
+    <section className="bg-brand-light py-12">
+      <div className="w-full px-4">
         {/* Heading */}
-        <h2 className="mb-10 text-center font-playfair text-3xl font-bold text-brand">
+        <h2 className="mb-10 text-center font-playfair text-4xl font-bold text-brand">
           Shop by Category
         </h2>
 
         {/* Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-0">
-          {categories.map((cat, i) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          {categories.map((cat) => (
             <Link
-              key={i}
-              href={`/category/${cat.slug || cat.name.toLowerCase()}`}
-              className="relative aspect-square w-full overflow-hidden group"
+              key={cat.id}
+              href={`/category/${cat.slug}`}
+              className="relative aspect-square w-full overflow-hidden rounded-xl group shadow-md"
             >
-              {/* Background image */}
+              {/* Image */}
               <Image
-                src={cat.image || DEFAULT_IMAGE}
+                src={cat.imageUrl || DEFAULT_IMAGE}
                 alt={cat.name}
                 fill
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
                 onError={(e) => {
                   e.currentTarget.src = DEFAULT_IMAGE
                 }}
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
 
-              {/* Overlay gradient */}
-              <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition"></div>
+              {/* Overlay */}
+              <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition"></div>
 
-              {/* Content */}
-              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white">
-                <div>
-                  <h3 className="font-medium text-lg">{cat.name}</h3>
-                  <p className="text-xs text-gray-200">{cat.itemCount || 0} items</p>
-                </div>
-                {/* Arrow */}
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-brand shadow group-hover:bg-brand group-hover:text-white transition">
+              {/* Centered Title */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-2">
+                <h3 className="font-semibold text-lg sm:text-xl drop-shadow">
+                  {cat.name}
+                </h3>
+                <span className="mt-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-brand shadow group-hover:bg-brand group-hover:text-white transition">
                   →
                 </span>
               </div>
