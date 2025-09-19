@@ -1,3 +1,4 @@
+import Categories from "@/components/home/Categories"
 import HeroBanner from "@/components/home/HeroBanner"
 import NewArrivals from "@/components/home/NewArrivals"
 import Reviews from "@/components/home/Reviews"
@@ -9,6 +10,7 @@ export default function HomePage() {
       <Navbar/>
       <HeroBanner />
       <NewArrivals />
+      <Categories/>
       <Reviews/>
     </main>
   )
