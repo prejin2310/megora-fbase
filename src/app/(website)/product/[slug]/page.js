@@ -156,13 +156,17 @@ export default function ProductPage() {
   return (
     <div className="bg-white relative z-0 pt-[72px]">
       {/* Breadcrumbs with category name + slug */}
-      <Breadcrumbs
-        product={{
-          ...product,
-          categoryName: category?.name,
-          categorySlug: category?.slug,
-        }}
-      />
+      {/* Breadcrumbs with category name + slug */}
+<Breadcrumbs
+  product={{
+    ...product,
+    categoryName: category?.name,
+    categorySlug: category?.slug,
+  }}
+  loading={loading}
+  bgColor="#FDFBED"
+/>
+
 
       {/* Main two-column layout */}
       <div className="mx-auto max-w-7xl grid gap-10 px-4 py-8 md:grid-cols-2">
