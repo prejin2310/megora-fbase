@@ -41,25 +41,6 @@ const inr = (n) =>
     currency: "INR",
   }).format(Number(n || 0))
 
-function getColorHex(name) {
-  switch (name?.toLowerCase()) {
-    case "emerald":
-      return "#025340"
-    case "ruby":
-      return "#b41c33"
-    case "gold":
-      return "#d4af37"
-    case "silver":
-      return "#c0c0c0"
-    case "violet":
-      return "#8a2be2"
-    case "sea green":
-      return "#2e8b57"
-    default:
-      return "#d6d5d5"
-  }
-}
-
 /* ----------------- Page ----------------- */
 export default function ProductPage() {
   const { slug } = useParams()
@@ -194,6 +175,12 @@ export default function ProductPage() {
       ).toFixed(1)
     : 0
 
+  const currentPrice =
+    selectedVariant?.option?.priceINR ||
+    selectedVariant?.prices?.INR ||
+    product.priceINR ||
+    0
+
   /* ----------------- Cart / Buy ----------------- */
   const handleAddToCart = () => {
     if (!selectedVariant) return toast.error("Please select a variant")
@@ -201,7 +188,7 @@ export default function ProductPage() {
       id: product.id,
       title: product.title,
       slug: product.handle,
-      price: selectedVariant.option?.priceINR,
+      price: currentPrice,
       qty,
       image: selectedVariant.images?.[0]?.url || product.media?.[0]?.url,
       sku: product.sku,
@@ -215,7 +202,7 @@ export default function ProductPage() {
       id: product.id,
       title: product.title,
       slug: product.handle,
-      price: selectedVariant.option?.priceINR,
+      price: currentPrice,
       qty,
       image: selectedVariant.images?.[0]?.url || product.media?.[0]?.url,
       sku: product.sku,
@@ -244,16 +231,16 @@ export default function ProductPage() {
       />
 
       {/* Layout */}
-      <div className="mx-auto max-w-7xl grid gap-10 px-4 py-8 md:grid-cols-2">
+      <div className="mx-auto max-w-7xl grid gap-8 px-4 py-8 md:grid-cols-2">
         {/* Gallery */}
-        <div className="w-full grid md:grid-cols-[80px_1fr] gap-3">
-          <div className="flex md:flex-col gap-3 overflow-x-auto md:overflow-y-auto md:max-h-[520px]">
+        <div className="w-full grid md:grid-cols-[70px_1fr] gap-2">
+          <div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-y-auto md:max-h-[480px]">
             {variantImages.map((img, i) => (
               <button
                 key={i}
                 onClick={() => setMainImg(img)}
                 className={clsx(
-                  "relative aspect-square w-20 md:w-[70px] flex-shrink-0 overflow-hidden rounded-lg border transition",
+                  "relative aspect-square w-16 md:w-[60px] flex-shrink-0 overflow-hidden rounded-lg border transition",
                   mainImg === img
                     ? "border-brand ring-2 ring-brand"
                     : "border-neutral-200 hover:border-neutral-400"
@@ -264,12 +251,12 @@ export default function ProductPage() {
                   alt={`${product.title} ${i + 1}`}
                   fill
                   className="object-cover"
-                  sizes="80px"
+                  sizes="60px"
                 />
               </button>
             ))}
           </div>
-          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-neutral-100">
+          <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-neutral-100">
             <Image
               src={mainImg}
               alt={product.title}
@@ -281,59 +268,56 @@ export default function ProductPage() {
         </div>
 
         {/* Info */}
-        <div className="space-y-6">
-          <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
+        <div className="space-y-5">
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-900">
             {product.title}
           </h1>
 
           {/* Rating */}
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-1 text-xs text-gray-600">
             {[1, 2, 3, 4, 5].map((i) => (
               <StarIcon
                 key={i}
-                className={`h-4 w-4 ${
+                className={`h-3.5 w-3.5 ${
                   i <= Math.round(avg) ? "text-yellow-400" : "text-gray-300"
                 }`}
               />
             ))}
-            <span>{avg} out of 5</span> · <span>{reviews.length} reviews</span>
+            <span>{avg} / 5</span> · <span>{reviews.length} reviews</span>
           </div>
 
           {/* Price */}
-          <div className="flex items-end gap-3">
-            <span className="text-2xl font-bold text-gray-900">
-              {inr(selectedVariant?.option?.priceINR)}
+          <div className="flex items-center gap-2">
+            <span className="text-xl font-bold text-gray-900">
+              {inr(currentPrice)}
             </span>
+            {selectedVariant?.stock > 0 ? (
+              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                In stock
+              </span>
+            ) : (
+              <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700">
+                Out of stock
+              </span>
+            )}
           </div>
 
           {/* Color Variants */}
           {colorOptions.length > 0 && (
             <div>
-              <div className="mb-2 text-sm font-medium text-gray-700">Color</div>
-              <div className="flex gap-4 flex-wrap">
+              <div className="mb-1 text-xs font-medium text-gray-700">Color</div>
+              <div className="flex gap-2 flex-wrap">
                 {colorOptions.map((c) => (
                   <button
                     key={c}
                     onClick={() => setSelectedColor(c)}
-                    className="flex flex-col items-center gap-1 focus:outline-none"
+                    className={`px-3 py-1 rounded-md border text-xs font-medium ${
+                      selectedColor === c
+                        ? "border-brand bg-brand text-white"
+                        : "border-gray-300 hover:border-gray-400"
+                    }`}
                   >
-                    <span
-                      className={`h-8 w-8 rounded-full border-2 ${
-                        selectedColor === c
-                          ? "border-brand ring-2 ring-brand"
-                          : "border-gray-300"
-                      }`}
-                      style={{ backgroundColor: getColorHex(c) }}
-                    />
-                    <span
-                      className={`text-xs ${
-                        selectedColor === c
-                          ? "font-semibold text-brand"
-                          : "text-gray-600"
-                      }`}
-                    >
-                      {c}
-                    </span>
+                    {c}
                   </button>
                 ))}
               </div>
@@ -341,44 +325,44 @@ export default function ProductPage() {
           )}
 
           {/* Qty + Wishlist */}
-          <div className="flex items-center gap-3">
-            <div className="inline-flex items-center rounded-full border border-gray-300">
-              <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="px-3 py-2">–</button>
-              <span className="min-w-10 text-center">{qty}</span>
-              <button onClick={() => setQty((q) => q + 1)} className="px-3 py-2">+</button>
+          <div className="flex items-center gap-2">
+            <div className="inline-flex items-center rounded border border-gray-300">
+              <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="px-2 py-1 text-sm">–</button>
+              <span className="min-w-8 text-center text-sm">{qty}</span>
+              <button onClick={() => setQty((q) => q + 1)} className="px-2 py-1 text-sm">+</button>
             </div>
             <button
               onClick={() => toggleWishlist(product)}
-              className={`rounded-full border px-4 py-2 text-sm ${
+              className={`rounded border px-3 py-1 text-xs ${
                 isWishlisted?.(product.id)
                   ? "border-amber-500 text-amber-700"
-                  : "border-gray-300 hover:border-gray-500"
+                  : "border-gray-300 hover:border-gray-400"
               }`}
             >
-              {isWishlisted?.(product.id) ? "Wishlisted" : "Add to Wishlist"}
+              {isWishlisted?.(product.id) ? "Wishlisted" : "Wishlist"}
             </button>
           </div>
 
           {/* CTA */}
-          <div className="flex flex-wrap gap-3 pt-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={handleAddToCart}
               disabled={!selectedVariant?.stock}
-              className="flex items-center gap-2 rounded-lg bg-brand px-6 py-3 text-white"
+              className="flex items-center gap-1 rounded bg-brand px-4 py-2 text-sm text-white"
             >
-              <ShoppingBagIcon className="h-5 w-5" /> Add to Cart
+              <ShoppingBagIcon className="h-4 w-4" /> Add
             </button>
             <button
               onClick={handleBuyNow}
               disabled={!selectedVariant?.stock}
-              className="rounded-lg border border-brand px-6 py-3 text-brand hover:bg-brand/5"
+              className="rounded border border-brand px-4 py-2 text-sm text-brand hover:bg-brand/5"
             >
               Buy Now
             </button>
           </div>
 
           {/* SKU + Category */}
-          <div className="space-y-2 pt-3 text-sm text-gray-700">
+          <div className="text-xs text-gray-700 space-y-0.5">
             {product.sku && <div><span className="font-medium">SKU:</span> {product.sku}</div>}
             {category?.name && (
               <div>
@@ -391,58 +375,49 @@ export default function ProductPage() {
           </div>
 
           {/* Delivery */}
-          <form onSubmit={checkPin} className="pt-3">
-            <div className="flex items-center gap-2 text-sm font-medium mb-2">
-              <TruckIcon className="h-5 w-5 text-brand" />
-              <span>Check Delivery Availability</span>
+          <form onSubmit={checkPin} className="pt-2 space-y-1">
+            <div className="flex items-center gap-1 text-xs font-medium">
+              <TruckIcon className="h-4 w-4 text-brand" />
+              Check Delivery
             </div>
-            <div className="flex max-w-md gap-2 bg-neutral-50 border border-gray-200 rounded-lg p-2">
+            <div className="flex max-w-xs gap-1">
               <input
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
-                placeholder="Enter pincode"
-                className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none"
+                placeholder="Pincode"
+                className="flex-1 rounded border border-gray-300 px-2 py-1 text-xs outline-none"
               />
-              <button type="submit" className="rounded-md bg-brand px-4 py-2 text-white text-sm">
-                Check
+              <button type="submit" className="rounded bg-brand px-3 py-1 text-xs text-white">
+                Go
               </button>
             </div>
             {deliveryMsg && (
-              <div className="mt-2 text-sm text-gray-700 flex items-center gap-2">
-                <TruckIcon className="h-4 w-4 text-green-600" /> {deliveryMsg}
+              <div className="text-xs text-gray-600 flex items-center gap-1">
+                <TruckIcon className="h-3 w-3 text-green-600" /> {deliveryMsg}
               </div>
             )}
           </form>
 
           {/* Trust */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6">
-            <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-neutral-50 p-3">
-              <ShieldCheckIcon className="h-6 w-6 text-emerald-600" />
-              <div>
-                <div className="text-sm font-medium">Secure Payments</div>
-                <div className="text-xs text-gray-500">UPI, Cards, Netbanking</div>
-              </div>
+          <div className="grid grid-cols-3 gap-2 pt-4">
+            <div className="flex items-center gap-2 rounded border border-gray-200 bg-neutral-50 p-2">
+              <ShieldCheckIcon className="h-4 w-4 text-emerald-600" />
+              <span className="text-[11px] font-medium">Secure</span>
             </div>
-            <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-neutral-50 p-3">
-              <TruckIcon className="h-6 w-6 text-blue-600" />
-              <div>
-                <div className="text-sm font-medium">Free Shipping</div>
-                <div className="text-xs text-gray-500">On orders above ₹599</div>
-              </div>
+            <div className="flex items-center gap-2 rounded border border-gray-200 bg-neutral-50 p-2">
+              <TruckIcon className="h-4 w-4 text-blue-600" />
+              <span className="text-[11px] font-medium">Free Ship</span>
             </div>
-            <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-neutral-50 p-3">
-              <ArrowPathRoundedSquareIcon className="h-6 w-6 text-orange-600" />
-              <div>
-                <div className="text-sm font-medium">Easy Returns</div>
-                <div className="text-xs text-gray-500">Return policy</div>
-              </div>
+            <div className="flex items-center gap-2 rounded border border-gray-200 bg-neutral-50 p-2">
+              <ArrowPathRoundedSquareIcon className="h-4 w-4 text-orange-600" />
+              <span className="text-[11px] font-medium">Returns</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs / Reviews / Similar */}
-      <div className="mx-auto max-w-7xl px-4 space-y-10 pb-16">
+      <div className="mx-auto max-w-7xl px-4 space-y-8 pb-12">
         <ProductTabs product={product} />
         <ProductReviews product={product} reviews={reviews} />
         <ProductSimilar related={related} />
