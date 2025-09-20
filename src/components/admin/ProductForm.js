@@ -2,11 +2,21 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  collection, doc, getDocs, query, where,
-  addDoc, updateDoc, serverTimestamp, deleteDoc,
+  collection,
+  doc,
+  getDocs,
+  query,
+  where,
+  addDoc,
+  updateDoc,
+  serverTimestamp,
+  deleteDoc,
 } from "firebase/firestore";
 import {
-  ref as sRef, uploadBytes, getDownloadURL, deleteObject,
+  ref as sRef,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
 } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import toast from "react-hot-toast";
@@ -18,7 +28,10 @@ const FAKE_MARKUP = 0.4; // +40%
 
 // ---------- Helpers ----------
 const slugify = (t = "") =>
-  t.toString().trim().toLowerCase()
+  t
+    .toString()
+    .trim()
+    .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
@@ -42,7 +55,9 @@ const buildFakePrice = (priceObj, override) => {
 };
 
 const pathForUpload = (sku, variantId, file) =>
-  `products/${sku || "no-sku"}/${variantId || "default"}/${Date.now()}_${file.name}`;
+  `products/${sku || "no-sku"}/${variantId || "default"}/${Date.now()}_${
+    file.name
+  }`;
 
 const ensureNumber = (v, fallback = 0) => {
   const n = Number(v);
@@ -57,6 +72,36 @@ const deleteByUrl = async (url) => {
     // ignore if file missing
   }
 };
+
+// --- Helper for search indexing ---
+function generateKeywords(title, sku) {
+  const keywords = [];
+  const text = title?.toLowerCase().trim() || "";
+
+  // Split into words
+  const words = text.split(/\s+/);
+
+  // Add each word
+  words.forEach((w) => keywords.push(w));
+
+  // Add full title
+  if (text) keywords.push(text);
+
+  // Add prefixes (pal → pala → palak → palakka)
+  words.forEach((w) => {
+    for (let i = 1; i <= w.length; i++) {
+      keywords.push(w.substring(0, i));
+    }
+  });
+
+  // Add SKU (lowercased)
+  if (sku) {
+    keywords.push(sku.toLowerCase());
+  }
+
+  // Deduplicate
+  return Array.from(new Set(keywords));
+}
 
 // ---------- Component ----------
 export default function ProductForm({
@@ -138,7 +183,10 @@ export default function ProductForm({
       return;
     }
     const timer = setTimeout(async () => {
-      const qy = query(collection(db, "products"), where("sku", "==", sku.trim()));
+      const qy = query(
+        collection(db, "products"),
+        where("sku", "==", sku.trim())
+      );
       const snaps = await getDocs(qy);
       if (snaps.size > 0) {
         if (!(mode === "edit" && initialData?.id === snaps.docs[0].id)) {
@@ -199,7 +247,10 @@ export default function ProductForm({
           ? va
           : {
               ...va,
-              images: va.images.map((im, j) => ({ ...im, thumbnail: j === imgIdx })),
+              images: va.images.map((im, j) => ({
+                ...im,
+                thumbnail: j === imgIdx,
+              })),
             }
       )
     );
@@ -223,7 +274,10 @@ export default function ProductForm({
       }
       setVariants((v) => {
         const copy = [...v];
-        copy[vidx] = { ...copy[vidx], images: [...copy[vidx].images, ...uploaded] };
+        copy[vidx] = {
+          ...copy[vidx],
+          images: [...copy[vidx].images, ...uploaded],
+        };
         return copy;
       });
       toast.success("Images uploaded");
@@ -293,6 +347,8 @@ export default function ProductForm({
         attributes: v.attributes || {},
       })),
       attributes,
+      // 🔥 Add keywords for search
+      keywords: generateKeywords(title, sku),
     };
   };
 
@@ -311,7 +367,8 @@ export default function ProductForm({
       return;
     }
 
-    if (!confirm(mode === "create" ? "Create this product?" : "Save changes?")) return;
+    if (!confirm(mode === "create" ? "Create this product?" : "Save changes?"))
+      return;
 
     setSaving(true);
     try {
@@ -343,7 +400,9 @@ export default function ProductForm({
     const loading = toast.loading("Deleting product...");
     try {
       const allUrls = [];
-      variants.forEach((v) => v.images.forEach((im) => allUrls.push(im.url)));
+      variants.forEach((v) =>
+        v.images.forEach((im) => allUrls.push(im.url))
+      );
       await Promise.all(allUrls.map(deleteByUrl));
       await deleteDoc(doc(db, "products", initialData.id));
       toast.success("Deleted product");
