@@ -15,22 +15,22 @@ export default function NewArrivals() {
 
   useEffect(() => {
     async function fetchProducts() {
-      const items = await getNewArrivals(6) // ✅ fetch 6
+      const items = await getNewArrivals(10)
       setProducts(items || [])
     }
     fetchProducts()
   }, [])
 
   return (
-    <section className="bg-brand py-20">
-      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+    <section className="bg-brand py-14 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-12">
+        <div className="flex items-center justify-between mb-6">
           <h2 className="text-3xl md:text-4xl font-playfair font-bold text-white">
             New Arrivals
           </h2>
           <Link
-            href="/products?filter=new"
+            href="/products"
             className="text-sm font-medium text-white hover:underline"
           >
             View All →
@@ -42,16 +42,22 @@ export default function NewArrivals() {
           <Swiper
             modules={[Navigation]}
             navigation
-            spaceBetween={24}
-            slidesPerView={2} // ✅ 2 on mobile
+            spaceBetween={20}
+            slidesPerView={2}
             breakpoints={{
               768: { slidesPerView: 3 },
-              1024: { slidesPerView: 4 },
+              1024: { slidesPerView: 5 },
             }}
+            className="z-10 relative" // ✅ prevent overlap
           >
-            {products.map((product) => (
+            {products.map((product, i) => (
               <SwiperSlide key={product.id}>
-                <ProductCard product={product} />
+                <div
+                  className="aspect-square animate-fadeIn"
+                  style={{ animationDelay: `${i * 100}ms` }}
+                >
+                  <ProductCard product={product} />
+                </div>
               </SwiperSlide>
             ))}
           </Swiper>

@@ -72,16 +72,18 @@ export default function Navbar() {
   const isHome = pathname === "/"
   const navbarBg =
     isHome && !scrolled
-      ? "bg-transparent"
-      : "bg-brand shadow-md transition-colors duration-300"
+      ? "bg-transparent backdrop-blur-0"
+      : "bg-brand/95 backdrop-blur-md shadow-lg"
 
   return (
-    <header className={`fixed top-0 left-0 w-full z-50 ${navbarBg}`}>
+    <header
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ease-in-out ${navbarBg}`}
+    >
       {/* Free shipping bar */}
       <p
-        className={`flex h-10 items-center justify-center px-4 text-sm font-medium ${
+        className={`flex h-10 items-center justify-center px-4 text-sm font-medium transition-all duration-500 ${
           isHome && !scrolled
-            ? "bg-white/70 text-brand backdrop-blur-md"
+            ? "bg-white/60 text-brand backdrop-blur-md"
             : "bg-white text-brand"
         }`}
       >
@@ -95,11 +97,14 @@ export default function Navbar() {
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="rounded-md p-2 text-white lg:hidden"
+              className="rounded-md p-2 text-white lg:hidden transition-colors duration-300"
             >
               <Bars3Icon className="h-6 w-6" />
             </button>
-            <Link href="/" className="ml-2 flex items-center">
+            <Link
+              href="/"
+              className="ml-2 flex items-center transition-transform duration-500 hover:scale-105"
+            >
               <Image src="/logoLan.png" alt="Megora" width={120} height={80} />
             </Link>
           </div>
@@ -121,7 +126,7 @@ export default function Navbar() {
               </button>
             ) : (
               <div className="hidden lg:block relative w-80">
-                <div className="flex items-center rounded-full bg-white/90 px-4 py-2 shadow-md backdrop-blur-md">
+                <div className="flex items-center rounded-full bg-white/90 px-4 py-2 shadow-md backdrop-blur-md transition-all duration-500">
                   <MagnifyingGlassIcon className="h-5 w-5 text-gray-500" />
                   <input
                     ref={searchInputRef}
@@ -145,7 +150,7 @@ export default function Navbar() {
 
                 {/* Search results */}
                 {showResults && (
-                  <div className="absolute mt-2 w-full bg-white shadow-lg rounded-lg z-50 max-h-72 overflow-y-auto">
+                  <div className="absolute mt-2 w-full bg-white shadow-lg rounded-lg z-50 max-h-72 overflow-y-auto transition-all duration-300">
                     {results.length > 0 ? (
                       results.map((product) => (
                         <Link
@@ -185,7 +190,7 @@ export default function Navbar() {
 
             {/* Wishlist */}
             <Link href="/wishlist" className="relative">
-              <HeartIcon className="h-6 w-6 text-white hover:text-gray-200" />
+              <HeartIcon className="h-6 w-6 text-white hover:text-gray-200 transition-colors duration-300" />
               {wishlist.length > 0 && (
                 <span className="absolute -top-1 -right-2 bg-red-500 text-xs rounded-full px-1">
                   {wishlist.length}
@@ -205,64 +210,10 @@ export default function Navbar() {
 
             {/* Profile */}
             <Link href="/profile">
-              <UserCircleIcon className="h-7 w-7 text-white hover:text-gray-200" />
+              <UserCircleIcon className="h-7 w-7 text-white hover:text-gray-200 transition-colors duration-300" />
             </Link>
           </div>
         </div>
-
-        {/* Mobile expanded search */}
-        {mobileSearch && (
-          <div className="mt-2 mb-4 lg:hidden">
-            <div className="flex items-center rounded-md bg-white/90 px-3 py-2 shadow backdrop-blur-md">
-              <MagnifyingGlassIcon className="h-5 w-5 text-gray-500" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search products..."
-                className="ml-2 w-full bg-transparent outline-none text-gray-700"
-              />
-              <button
-                onClick={() => {
-                  setMobileSearch(false)
-                  setQuery("")
-                  setShowResults(false)
-                }}
-                className="ml-2 text-gray-400 hover:text-gray-600"
-              >
-                <XMarkIcon className="h-5 w-5" />
-              </button>
-            </div>
-            {showResults && (
-              <div className="mt-2 bg-white shadow-lg rounded-lg z-50 max-h-72 overflow-y-auto">
-                {results.length > 0 ? (
-                  results.map((product) => (
-                    <Link
-                      key={product.id}
-                      href={`/product/${product.handle || product.slug}`}
-                      className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 border-b"
-                      onClick={() => setShowResults(false)}
-                    >
-                      <Image
-                        src={product.media?.[0]?.url || "/demo/product1.jpg"}
-                        alt={product.title}
-                        width={40}
-                        height={40}
-                        className="rounded-md"
-                      />
-                      <div>
-                        <p className="text-sm text-gray-800">{product.title}</p>
-                        <p className="text-xs text-gray-500">SKU: {product.sku || "N/A"}</p>
-                      </div>
-                    </Link>
-                  ))
-                ) : (
-                  <div className="px-4 py-2 text-gray-500">No products found</div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
       </nav>
     </header>
   )
