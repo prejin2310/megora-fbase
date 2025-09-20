@@ -2,223 +2,277 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useAuth } from "@/context/AuthContext"
 import { db } from "@/lib/firebase"
 import {
   collection,
-  getDocs,
-  query,
-  doc,
-  setDoc,
+  addDoc,
   serverTimestamp,
 } from "firebase/firestore"
+import { useAuth } from "@/context/AuthContext"
+import { useCart } from "@/context/CartContext"
 import toast from "react-hot-toast"
-import Script from "next/script"
-import { inr } from "@/lib/utils"
 
 export default function CheckoutPage() {
-  const { user } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { user } = useAuth()
+  const { cart, clearCart } = useCart()
 
-  const [cart, setCart] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [buyNowItem, setBuyNowItem] = useState(null)
+
+  // form state
   const [shipping, setShipping] = useState({
     name: "",
+    email: "",
     phone: "",
-    addressLine1: "",
-    addressLine2: "",
+    address: "",
     city: "",
-    state: "",
     pincode: "",
-    country: "India",
+    state: "",
   })
+  const [giftWrap, setGiftWrap] = useState(false)
+  const [delivery, setDelivery] = useState("normal")
+  const [payment, setPayment] = useState("cod")
+  const [submitting, setSubmitting] = useState(false)
+  const [orderId, setOrderId] = useState(null)
 
-  /* ----------------- Fetch Cart ----------------- */
+  // force login
   useEffect(() => {
     if (!user) {
-      toast.error("Please login to checkout")
+      toast.error("Please login to continue checkout")
       router.push("/login")
-      return
     }
-    const fetchCart = async () => {
-      try {
-        setLoading(true)
-        const q = query(collection(db, "users", user.uid, "cart"))
-        const snap = await getDocs(q)
-        const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-        setCart(items)
-      } catch (err) {
-        console.error(err)
-        toast.error("Failed to load cart")
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchCart()
   }, [user, router])
 
-  if (loading) return <div className="p-10 text-center">Loading checkout…</div>
-  if (!cart.length) return <div className="p-10 text-center">Cart is empty.</div>
+  // read buyNow item from query
+  useEffect(() => {
+    const buyNow = searchParams.get("buyNow")
+    if (buyNow) {
+  setBuyNowItem(JSON.parse(decodeURIComponent(buyNow)))
+}
+  }, [searchParams])
 
-  const total = cart.reduce((a, c) => a + c.price * c.qty, 0)
+  if (!user) return null
 
-  /* ----------------- Create Order ----------------- */
-  const createOrder = async () => {
-    if (!shipping.name || !shipping.phone || !shipping.addressLine1 || !shipping.city) {
-      toast.error("Please fill shipping details")
+  const items = buyNowItem ? [buyNowItem] : cart
+
+  // totals
+  const subtotal = items.reduce((a, i) => a + i.price * i.qty, 0)
+  const giftCharge = giftWrap ? 30 : 0
+  const deliveryCharge = delivery === "express" ? 50 : 0
+  const total = subtotal + giftCharge + deliveryCharge
+
+  const handleConfirm = async () => {
+    if (!shipping.name || !shipping.address || !shipping.phone) {
+      toast.error("Please fill all required fields")
       return
     }
+
     try {
-      const orderId = "ORD-" + Date.now()
-      const orderRef = doc(db, "orders", orderId)
-
-      await setDoc(orderRef, {
-        orderId,
-        userId: user.uid,
-        items: cart,
-        total,
-        status: "pending",
-        createdAt: serverTimestamp(),
-        customer: {
-          name: shipping.name,
-          email: user.email,
-          phone: shipping.phone,
-        },
+      setSubmitting(true)
+      const orderRef = await addDoc(collection(db, "orders"), {
+        customerId: user.uid,
+        customerName: shipping.name,
+        customerEmail: shipping.email,
+        customerPhone: shipping.phone,
         shipping,
-        tracking: null,
+        items,
+        subtotal,
+        giftWrap,
+        delivery,
+        deliveryCharge,
+        payment,
+        total,
+        status: payment === "cod" ? "pending" : "paid",
+        createdAt: serverTimestamp(),
       })
-
-      // Razorpay integration (can enable later)
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY || "test_key",
-        amount: total * 100,
-        currency: "INR",
-        name: "Megora Jewels",
-        description: "Order Payment",
-        handler: async function (response) {
-          await setDoc(
-            orderRef,
-            {
-              status: "paid",
-              paymentId: response.razorpay_payment_id,
-              paidAt: new Date(),
-            },
-            { merge: true }
-          )
-          toast.success("Payment successful")
-          router.push("/orders/" + orderId)
-        },
-        prefill: {
-          email: user.email,
-        },
-        theme: { color: "#003D3A" },
-      }
-      const rzp = new window.Razorpay(options)
-      rzp.open()
+      clearCart()
+      setOrderId(orderRef.id)
+      toast.success("Order placed successfully!")
     } catch (err) {
       console.error(err)
-      toast.error("Order failed")
+      toast.error("Failed to confirm order")
+    } finally {
+      setSubmitting(false)
     }
   }
 
+  if (orderId) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-12 text-center">
+        <h1 className="text-2xl font-semibold mb-4 text-green-600">
+          ✅ Order Confirmed
+        </h1>
+        <p className="mb-2">Your order has been placed successfully.</p>
+        <p className="font-mono text-gray-700">
+          Transaction ID: {orderId}
+        </p>
+        <button
+          onClick={() => router.push("/")}
+          className="mt-6 px-6 py-3 rounded-lg bg-brand text-white"
+        >
+          Continue Shopping
+        </button>
+      </div>
+    )
+  }
+
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" />
-      <h1 className="text-2xl font-semibold mb-4">Checkout</h1>
-
+    <div className="max-w-5xl mx-auto px-4 py-8 grid lg:grid-cols-3 gap-8">
       {/* Shipping Form */}
-      <div className="space-y-3 border rounded-lg p-4 bg-neutral-50">
-        <h2 className="text-lg font-medium">Shipping Details</h2>
-        <input
-          placeholder="Full Name"
-          value={shipping.name}
-          onChange={(e) => setShipping({ ...shipping, name: e.target.value })}
-          className="w-full border rounded-md px-3 py-2 text-sm"
-        />
-        <input
-          placeholder="Phone"
-          value={shipping.phone}
-          onChange={(e) => setShipping({ ...shipping, phone: e.target.value })}
-          className="w-full border rounded-md px-3 py-2 text-sm"
-        />
-        <input
-          placeholder="Address Line 1"
-          value={shipping.addressLine1}
-          onChange={(e) =>
-            setShipping({ ...shipping, addressLine1: e.target.value })
-          }
-          className="w-full border rounded-md px-3 py-2 text-sm"
-        />
-        <input
-          placeholder="Address Line 2"
-          value={shipping.addressLine2}
-          onChange={(e) =>
-            setShipping({ ...shipping, addressLine2: e.target.value })
-          }
-          className="w-full border rounded-md px-3 py-2 text-sm"
-        />
-        <div className="grid grid-cols-2 gap-3">
-          <input
-            placeholder="City"
-            value={shipping.city}
-            onChange={(e) => setShipping({ ...shipping, city: e.target.value })}
-            className="w-full border rounded-md px-3 py-2 text-sm"
-          />
-          <input
-            placeholder="State"
-            value={shipping.state}
-            onChange={(e) =>
-              setShipping({ ...shipping, state: e.target.value })
-            }
-            className="w-full border rounded-md px-3 py-2 text-sm"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <input
-            placeholder="Pincode"
-            value={shipping.pincode}
-            onChange={(e) =>
-              setShipping({ ...shipping, pincode: e.target.value })
-            }
-            className="w-full border rounded-md px-3 py-2 text-sm"
-          />
-          <input
-            placeholder="Country"
-            value={shipping.country}
-            onChange={(e) =>
-              setShipping({ ...shipping, country: e.target.value })
-            }
-            className="w-full border rounded-md px-3 py-2 text-sm"
-          />
-        </div>
-      </div>
+      <div className="lg:col-span-2 space-y-6">
+        <h1 className="text-2xl font-semibold text-gray-900">Checkout</h1>
 
-      {/* Cart Summary */}
-      <div className="space-y-2 border rounded-lg p-4">
-        <h2 className="text-lg font-medium mb-2">Order Summary</h2>
-        {cart.map((item) => (
-          <div
-            key={item.id}
-            className="flex justify-between text-sm border-b pb-1"
-          >
-            <span>{item.title} × {item.qty}</span>
-            <span>{inr(item.price * item.qty)}</span>
+        <div className="space-y-4 bg-white p-6 rounded-xl shadow">
+          <h2 className="font-medium text-lg">Shipping Information</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input
+              placeholder="Full Name"
+              value={shipping.name}
+              onChange={(e) => setShipping({ ...shipping, name: e.target.value })}
+              className="border rounded-lg px-3 py-2"
+            />
+            <input
+              placeholder="Email"
+              value={shipping.email}
+              onChange={(e) => setShipping({ ...shipping, email: e.target.value })}
+              className="border rounded-lg px-3 py-2"
+            />
+            <input
+              placeholder="Phone"
+              value={shipping.phone}
+              onChange={(e) => setShipping({ ...shipping, phone: e.target.value })}
+              className="border rounded-lg px-3 py-2"
+            />
+            <input
+              placeholder="Pincode"
+              value={shipping.pincode}
+              onChange={(e) => setShipping({ ...shipping, pincode: e.target.value })}
+              className="border rounded-lg px-3 py-2"
+            />
           </div>
-        ))}
-        <div className="flex justify-between font-semibold text-lg pt-2">
-          <span>Total</span>
-          <span>{inr(total)}</span>
+          <input
+            placeholder="Address"
+            value={shipping.address}
+            onChange={(e) => setShipping({ ...shipping, address: e.target.value })}
+            className="border rounded-lg px-3 py-2 w-full"
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              placeholder="City"
+              value={shipping.city}
+              onChange={(e) => setShipping({ ...shipping, city: e.target.value })}
+              className="border rounded-lg px-3 py-2"
+            />
+            <input
+              placeholder="State"
+              value={shipping.state}
+              onChange={(e) => setShipping({ ...shipping, state: e.target.value })}
+              className="border rounded-lg px-3 py-2"
+            />
+          </div>
+        </div>
+
+        {/* Options */}
+        <div className="bg-white p-6 rounded-xl shadow space-y-4">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={giftWrap}
+              onChange={(e) => setGiftWrap(e.target.checked)}
+            />
+            <span>Gift wrap my order (+₹30)</span>
+          </label>
+
+          <div>
+            <h3 className="font-medium mb-2">Delivery Method</h3>
+            <label className="block">
+              <input
+                type="radio"
+                name="delivery"
+                value="normal"
+                checked={delivery === "normal"}
+                onChange={(e) => setDelivery(e.target.value)}
+              />
+              <span className="ml-2">Normal (5–7 days) – Free</span>
+            </label>
+            <label className="block">
+              <input
+                type="radio"
+                name="delivery"
+                value="express"
+                checked={delivery === "express"}
+                onChange={(e) => setDelivery(e.target.value)}
+              />
+              <span className="ml-2">Express (3–5 days) – ₹50</span>
+            </label>
+          </div>
+
+          <div>
+            <h3 className="font-medium mb-2">Payment Method</h3>
+            <label className="block">
+              <input
+                type="radio"
+                name="payment"
+                value="cod"
+                checked={payment === "cod"}
+                onChange={(e) => setPayment(e.target.value)}
+              />
+              <span className="ml-2">Cash on Delivery</span>
+            </label>
+            <label className="block">
+              <input
+                type="radio"
+                name="payment"
+                value="razorpay"
+                checked={payment === "razorpay"}
+                onChange={(e) => setPayment(e.target.value)}
+              />
+              <span className="ml-2">Razorpay (Card/UPI)</span>
+            </label>
+          </div>
         </div>
       </div>
 
-      {/* Pay Now */}
-      <button
-        onClick={createOrder}
-        className="w-full bg-brand text-white py-3 rounded-lg shadow hover:shadow-md"
-      >
-        Pay Now
-      </button>
+      {/* Summary */}
+      <div className="bg-white p-6 rounded-xl shadow space-y-4 h-fit">
+        <h2 className="font-medium text-lg">Order Summary</h2>
+        <ul className="divide-y">
+          {items.map((i, idx) => (
+            <li key={idx} className="flex justify-between py-2 text-sm">
+              <span>{i.title} × {i.qty}</span>
+              <span>₹{(i.price * i.qty).toLocaleString()}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="flex justify-between text-sm">
+          <span>Subtotal</span>
+          <span>₹{subtotal}</span>
+        </div>
+        {giftWrap && (
+          <div className="flex justify-between text-sm">
+            <span>Gift Wrap</span>
+            <span>₹30</span>
+          </div>
+        )}
+        {delivery === "express" && (
+          <div className="flex justify-between text-sm">
+            <span>Express Delivery</span>
+            <span>₹50</span>
+          </div>
+        )}
+        <div className="flex justify-between font-semibold text-lg pt-2 border-t">
+          <span>Total</span>
+          <span>₹{total}</span>
+        </div>
+        <button
+          onClick={handleConfirm}
+          disabled={submitting}
+          className="w-full mt-4 px-6 py-3 rounded-lg bg-brand text-white disabled:opacity-50"
+        >
+          {submitting ? "Placing Order…" : "Confirm Order"}
+        </button>
+      </div>
     </div>
   )
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { db } from "@/lib/firebase"
+import { db, auth } from "@/lib/firebase"
 import {
   collection,
   getDocs,
@@ -13,6 +13,7 @@ import {
   getDoc,
   orderBy,
 } from "firebase/firestore"
+import { onAuthStateChanged } from "firebase/auth"
 import Image from "next/image"
 import clsx from "clsx"
 import toast from "react-hot-toast"
@@ -50,6 +51,7 @@ export default function ProductPage() {
   const { addItem, buyNow } = useCart()
   const { toggleWishlist, isWishlisted } = useWishlist()
 
+  const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [product, setProduct] = useState(null)
@@ -64,6 +66,12 @@ export default function ProductPage() {
   const [qty, setQty] = useState(1)
   const [pin, setPin] = useState("")
   const [deliveryMsg, setDeliveryMsg] = useState("")
+
+  /* ----------------- Auth listener ----------------- */
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => setUser(u))
+    return () => unsub()
+  }, [])
 
   /* ----------------- Fetch product ----------------- */
   useEffect(() => {
@@ -87,12 +95,10 @@ export default function ProductPage() {
         // Category
         if (data.categoryId) {
           const catSnap = await getDoc(doc(db, "categories", data.categoryId))
-          if (catSnap.exists()) {
-            setCategory({ id: catSnap.id, ...catSnap.data() })
-          }
+          if (catSnap.exists()) setCategory({ id: catSnap.id, ...catSnap.data() })
         }
 
-        // Related
+        // Related products
         if (data.categoryId) {
           const relQ = query(
             collection(db, "products"),
@@ -118,14 +124,11 @@ export default function ProductPage() {
         const variants = Object.values(data.variants || {})
         if (variants.length > 0) {
           const firstColor =
-            variants[0].options?.find((o) => o.title?.toLowerCase() === "color")?.name ||
-            null
+            variants[0].options?.find((o) => o.title?.toLowerCase() === "color")?.name || null
           setSelectedColor(firstColor)
           setSelectedVariant(variants[0])
           setMainImg(
-            variants[0].images?.[0]?.url ||
-              data.media?.[0]?.url ||
-              "/placeholder.png"
+            variants[0].images?.[0]?.url || data.media?.[0]?.url || "/placeholder.png"
           )
         }
       } catch (err) {
@@ -159,9 +162,7 @@ export default function ProductPage() {
   const colorOptions = [
     ...new Set(
       variants
-        .map((v) =>
-          v.options?.find((o) => o.title?.toLowerCase() === "color")?.name
-        )
+        .map((v) => v.options?.find((o) => o.title?.toLowerCase() === "color")?.name)
         .filter(Boolean)
     ),
   ]
@@ -182,15 +183,18 @@ export default function ProductPage() {
     selectedVariant?.prices?.INR ||
     product.priceINR ||
     0
-  const fakePrice =
-    selectedVariant?.fakePriceINR ||
-    selectedVariant?.prices?.MRP ||
-    null
+  const fakePrice = selectedVariant?.fakePriceINR || selectedVariant?.prices?.MRP || null
   const discount = getDiscount(currentPrice, fakePrice)
 
-  /* ----------------- Cart / Buy ----------------- */
+  /* ----------------- Cart / Wishlist / Buy ----------------- */
   const handleAddToCart = () => {
+    if (!user) {
+      toast.error("Please login to add items to cart")
+      router.push("/login")
+      return
+    }
     if (!selectedVariant) return toast.error("Please select a variant")
+
     addItem({
       id: product.id,
       title: product.title,
@@ -199,21 +203,33 @@ export default function ProductPage() {
       qty,
       image: selectedVariant.images?.[0]?.url || product.media?.[0]?.url,
       sku: product.sku,
+      variant: selectedVariant.option?.name,
     })
+
+    toast.success("Item added to cart")
+    router.push("/cart")
   }
 
-  const handleBuyNow = () => {
-    if (!selectedVariant) return toast.error("Please select a variant")
-    buyNow({
-      id: product.id,
-      title: product.title,
-      slug: product.handle,
-      price: currentPrice,
-      qty,
-      image: selectedVariant.images?.[0]?.url || product.media?.[0]?.url,
-      sku: product.sku,
-    })
+const handleBuyNow = () => {
+  if (!selectedVariant) return toast.error("Please select a variant")
+
+  const orderItem = {
+    id: product.id,
+    title: product.title,
+    slug: product.handle,
+    price: currentPrice,
+    qty,
+    variant: selectedColor || "default",
+    image: selectedVariant.images?.[0]?.url || product.media?.[0]?.url,
+    sku: product.sku,
   }
+
+  // encode into query string
+  const query = `?buyNow=${encodeURIComponent(JSON.stringify(orderItem))}`
+  router.push(`/checkout${query}`)
+}
+
+
 
   /* ----------------- Delivery check ----------------- */
   const checkPin = (e) => {
@@ -240,6 +256,7 @@ export default function ProductPage() {
       <div className="mx-auto max-w-7xl grid gap-10 px-4 py-8 md:grid-cols-2">
         {/* Gallery */}
         <div className="w-full grid md:grid-cols-[80px_1fr] gap-3">
+          {/* Desktop thumbnails */}
           <div className="hidden md:flex md:flex-col gap-3 overflow-y-auto md:max-h-[520px]">
             {variantImages.map((img, i) => (
               <button
@@ -258,10 +275,13 @@ export default function ProductPage() {
                   fill
                   className="object-cover"
                   sizes="80px"
+                  loading="lazy"
                 />
               </button>
             ))}
           </div>
+
+          {/* Main image */}
           <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-neutral-100">
             <Image
               src={mainImg}
@@ -271,7 +291,8 @@ export default function ProductPage() {
               className="object-cover hover:scale-105 transition-transform"
             />
           </div>
-          {/* Thumbnails below main image on mobile */}
+
+          {/* Mobile thumbnails */}
           <div className="flex md:hidden gap-3 overflow-x-auto mt-3">
             {variantImages.map((img, i) => (
               <button
@@ -290,6 +311,7 @@ export default function ProductPage() {
                   fill
                   className="object-cover"
                   sizes="80px"
+                  loading="lazy"
                 />
               </button>
             ))}
@@ -298,25 +320,22 @@ export default function ProductPage() {
 
         {/* Info */}
         <div className="space-y-6">
-          {/* Top Meta */}
-          <div className="text-sm text-gray-700 flex items-center gap-4">
-            {product.sku && <span>SKU: {product.sku}</span>}
-            {category?.name && (
-              <span>
-                Category:{" "}
-                <Link href={`/category/${category.slug}`} className="text-brand hover:underline">
-                  {category.name}
-                </Link>
-              </span>
-            )}
-          </div>
-
-          {/* Title */}
+          {/* Name + Price */}
           <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
             {product.title}
           </h1>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <StarIcon
+                key={i}
+                className={`h-4 w-4 ${
+                  i <= Math.round(avg) ? "text-yellow-400" : "text-gray-300"
+                }`}
+              />
+            ))}
+            <span>{avg} out of 5</span> · <span>{reviews.length} reviews</span>
+          </div>
 
-          {/* Price */}
           <div className="flex items-center gap-3">
             {fakePrice && (
               <span className="text-lg text-gray-500 line-through">
@@ -333,17 +352,17 @@ export default function ProductPage() {
             )}
           </div>
 
-          {/* Rating */}
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <StarIcon
-                key={i}
-                className={`h-4 w-4 ${
-                  i <= Math.round(avg) ? "text-yellow-400" : "text-gray-300"
-                }`}
-              />
-            ))}
-            <span>{avg} out of 5</span> · <span>{reviews.length} reviews</span>
+          {/* SKU + Category */}
+          <div className="text-sm text-gray-700 flex gap-4">
+            {product.sku && <div><span className="font-medium">SKU:</span> {product.sku}</div>}
+            {category?.name && (
+              <div>
+                <span className="font-medium">Category:</span>{" "}
+                <Link href={`/category/${category.slug}`} className="text-brand hover:underline">
+                  {category.name}
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Color Variants */}
@@ -380,8 +399,15 @@ export default function ProductPage() {
               <button onClick={() => setQty((q) => q + 1)} className="px-3 py-2">+</button>
             </div>
             <button
-              onClick={() => toggleWishlist(product)}
-              className={`flex items-center gap-1 rounded-full border px-4 py-2 text-sm ${
+              onClick={() => {
+                if (!user) {
+                  toast.error("Please login to use wishlist")
+                  router.push("/login")
+                  return
+                }
+                toggleWishlist(product)
+              }}
+              className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm ${
                 isWishlisted?.(product.id)
                   ? "border-amber-500 text-amber-700"
                   : "border-gray-300 hover:border-gray-500"

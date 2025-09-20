@@ -1,57 +1,72 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState } from "react"
-import { db } from "@/lib/firebase"
-import { useAuth } from "./AuthContext"
-import {
-  collection,
-  doc,
-  setDoc,
-  deleteDoc,
-  getDocs,
-} from "firebase/firestore"
+import { createContext, useContext, useState, useEffect } from "react"
+import { db, auth } from "@/lib/firebase"
+import { onAuthStateChanged } from "firebase/auth"
+import { doc, setDoc, getDoc } from "firebase/firestore"
 import toast from "react-hot-toast"
 
 const WishlistContext = createContext()
 export const useWishlist = () => useContext(WishlistContext)
 
 export function WishlistProvider({ children }) {
-  const { user } = useAuth()
   const [wishlist, setWishlist] = useState([])
+  const [user, setUser] = useState(null)
 
+  /* ----------------- Auth listener ----------------- */
   useEffect(() => {
-    if (!user) {
-      setWishlist([])
-      return
-    }
-    const fetch = async () => {
-      const snap = await getDocs(collection(db, "users", user.uid, "wishlist"))
-      setWishlist(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-    }
-    fetch()
-  }, [user])
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      setUser(u)
 
-  const toggleWishlist = async (product) => {
-    if (!user) return toast.error("Please login to use wishlist")
+      if (u) {
+        const ref = doc(db, "users", u.uid, "meta", "wishlist")
+        const snap = await getDoc(ref)
+        const firestoreList = snap.exists() ? snap.data().items || [] : []
 
-    const exists = wishlist.find((w) => w.id === product.id)
-    try {
-      if (exists) {
-        await deleteDoc(doc(db, "users", user.uid, "wishlist", product.id))
-        setWishlist((prev) => prev.filter((w) => w.id !== product.id))
-        toast.success("Removed from wishlist")
+        const guestList = JSON.parse(localStorage.getItem("guest_wishlist") || "[]")
+        const merged = [...new Map([...firestoreList, ...guestList].map(i => [i.id, i])).values()]
+
+        setWishlist(merged)
+        await setDoc(ref, { items: merged }, { merge: true })
+
+        localStorage.removeItem("guest_wishlist")
       } else {
-        await setDoc(doc(db, "users", user.uid, "wishlist", product.id), product)
-        setWishlist((prev) => [...prev, product])
-        toast.success("Added to wishlist")
+        const guestList = JSON.parse(localStorage.getItem("guest_wishlist") || "[]")
+        setWishlist(guestList)
       }
-    } catch (err) {
-      console.error(err)
-      toast.error("Failed to update wishlist")
+    })
+    return () => unsub()
+  }, [])
+
+  const syncWishlist = async (newList) => {
+    if (user) {
+      const ref = doc(db, "users", user.uid, "meta", "wishlist")
+      await setDoc(ref, { items: newList }, { merge: true })
+    } else {
+      localStorage.setItem("guest_wishlist", JSON.stringify(newList))
     }
   }
 
-  const isWishlisted = (id) => wishlist.some((w) => w.id === id)
+  /* ----------------- Wishlist Actions ----------------- */
+  const toggleWishlist = (item) => {
+    setWishlist((prev) => {
+      const exists = prev.find((p) => p.id === item.id)
+      let updated
+      if (exists) {
+        updated = prev.filter((p) => p.id !== item.id)
+        toast("Removed from wishlist", { icon: "💔" })
+      } else {
+        updated = [...prev, item]
+        toast.success("Added to wishlist")
+        if (!user) toast("Login to save your wishlist across devices", { icon: "⚠️" })
+      }
+
+      syncWishlist(updated)
+      return updated
+    })
+  }
+
+  const isWishlisted = (id) => wishlist.some((i) => i.id === id)
 
   return (
     <WishlistContext.Provider value={{ wishlist, toggleWishlist, isWishlisted }}>

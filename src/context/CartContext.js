@@ -1,8 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect } from "react"
-import { db } from "@/lib/firebase"
-import { auth } from "@/lib/firebase"
+import { db, auth } from "@/lib/firebase"
 import { onAuthStateChanged } from "firebase/auth"
 import { doc, setDoc, getDoc } from "firebase/firestore"
 import toast from "react-hot-toast"
@@ -18,76 +17,99 @@ export function CartProvider({ children }) {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u)
+
       if (u) {
-        try {
-          const ref = doc(db, "users", u.uid, "meta", "cart")
-          const snap = await getDoc(ref)
-          if (snap.exists()) {
-            setCart(snap.data().items || [])
-          } else {
-            setCart([])
-          }
-        } catch (err) {
-          console.error("Failed to load cart:", err)
-        }
+        // load Firestore cart
+        const ref = doc(db, "users", u.uid, "meta", "cart")
+        const snap = await getDoc(ref)
+        const firestoreCart = snap.exists() ? snap.data().items || [] : []
+
+        // merge guest cart from localStorage
+        const guestCart = JSON.parse(localStorage.getItem("guest_cart") || "[]")
+        const merged = mergeCarts(firestoreCart, guestCart)
+
+        setCart(merged)
+        await setDoc(ref, { items: merged }, { merge: true })
+
+        localStorage.removeItem("guest_cart") // clear guest cart
       } else {
-        setCart([])
+        // guest mode → load local cart
+        const guestCart = JSON.parse(localStorage.getItem("guest_cart") || "[]")
+        setCart(guestCart)
       }
     })
     return () => unsub()
   }, [])
 
-  /* ----------------- Firestore sync ----------------- */
-  useEffect(() => {
-    if (!user) return
-    const ref = doc(db, "users", user.uid, "meta", "cart")
-    setDoc(ref, { items: cart }, { merge: true }).catch((err) =>
-      console.error("Cart sync failed:", err)
-    )
-  }, [cart, user])
+  /* ----------------- Helpers ----------------- */
+  const mergeCarts = (a, b) => {
+    const map = new Map()
+    ;[...a, ...b].forEach((item) => {
+      const key = `${item.id}-${item.variant || "default"}`
+      if (map.has(key)) {
+        map.set(key, { ...map.get(key), qty: map.get(key).qty + item.qty })
+      } else {
+        map.set(key, { ...item })
+      }
+    })
+    return [...map.values()]
+  }
+
+  const syncCart = async (newCart) => {
+    if (user) {
+      const ref = doc(db, "users", user.uid, "meta", "cart")
+      await setDoc(ref, { items: newCart }, { merge: true })
+    } else {
+      localStorage.setItem("guest_cart", JSON.stringify(newCart))
+    }
+  }
 
   /* ----------------- Cart Actions ----------------- */
   const addItem = (item) => {
-    if (!user) {
-      toast.error("Please login to add items to cart")
-      return
-    }
-
     setCart((prev) => {
-      const exists = prev.find((p) => p.id === item.id)
+      const exists = prev.find((p) => p.id === item.id && p.variant === item.variant)
+      let updated
       if (exists) {
-        return prev.map((p) =>
-          p.id === item.id ? { ...p, qty: p.qty + item.qty } : p
+        updated = prev.map((p) =>
+          p.id === item.id && p.variant === item.variant
+            ? { ...p, qty: p.qty + item.qty }
+            : p
         )
+      } else {
+        updated = [...prev, { ...item, qty: item.qty ?? 1 }]
       }
-      return [...prev, item]
-    })
 
-    toast.success("Added to cart")
+      syncCart(updated)
+
+      toast.success("Added to cart")
+      if (!user) toast("Login to save your cart for later", { icon: "⚠️" })
+
+      return updated
+    })
   }
 
-  const removeItem = (id) => {
-    if (!user) return
-    setCart((prev) => prev.filter((p) => p.id !== id))
+  const removeItem = (id, variant) => {
+    setCart((prev) => {
+      const updated = prev.filter((p) => !(p.id === id && p.variant === variant))
+      syncCart(updated)
+      return updated
+    })
     toast.success("Removed from cart")
   }
 
   const clearCart = () => {
-    if (!user) return
     setCart([])
+    syncCart([])
     toast.success("Cart cleared")
   }
 
   const buyNow = (item) => {
-    if (!user) return toast.error("Please login to continue")
     sessionStorage.setItem("buyNow", JSON.stringify(item))
     window.location.href = "/checkout?buyNow=true"
   }
 
   return (
-    <CartContext.Provider
-      value={{ cart, addItem, removeItem, clearCart, buyNow }}
-    >
+    <CartContext.Provider value={{ cart, addItem, removeItem, clearCart, buyNow }}>
       {children}
     </CartContext.Provider>
   )
