@@ -44,6 +44,47 @@ function getDiscount(p, mrp) {
   return Math.round(((mrp - p) / mrp) * 100)
 }
 
+/* ----------------- Skeleton Loader ----------------- */
+function ProductSkeleton() {
+  return (
+    <div className="mx-auto max-w-7xl grid gap-10 px-4 py-8 md:grid-cols-2 animate-pulse">
+      {/* Image placeholder */}
+      <div className="w-full aspect-[4/5] rounded-2xl bg-gray-200" />
+      {/* Info placeholders */}
+      <div className="space-y-4">
+        <div className="h-6 w-2/3 bg-gray-200 rounded" />
+        <div className="h-4 w-1/2 bg-gray-200 rounded" />
+        <div className="h-10 w-1/3 bg-gray-200 rounded" />
+        <div className="h-20 w-full bg-gray-200 rounded" />
+        <div className="h-10 w-40 bg-gray-200 rounded" />
+      </div>
+    </div>
+  )
+}
+
+/* ----------------- Fade-in Image with shimmer ----------------- */
+function FadeImage({ src, alt, className, ...props }) {
+  const [loaded, setLoaded] = useState(false)
+  return (
+    <div className="relative w-full h-full">
+      {!loaded && (
+        <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-lg" />
+      )}
+      <Image
+        src={src}
+        alt={alt}
+        onLoad={() => setLoaded(true)}
+        className={clsx(
+          "transition-opacity duration-700 object-cover",
+          loaded ? "opacity-100" : "opacity-0",
+          className
+        )}
+        {...props}
+      />
+    </div>
+  )
+}
+
 /* ----------------- Page ----------------- */
 export default function ProductPage() {
   const { slug } = useParams()
@@ -155,9 +196,20 @@ export default function ProductPage() {
     if (match?.images?.length) setMainImg(match.images[0].url)
   }, [selectedColor, product])
 
-  if (loading) return <div className="p-10 text-center">Loading…</div>
-  if (error || !product) return <div className="p-20 text-center text-rose-600">Product not found.</div>
+  /* ----------------- Loading/Error states ----------------- */
+  if (loading) {
+    return (
+      <div className="bg-white relative z-0 pt-[100px] md:pt-[120px]">
+        <Breadcrumbs loading bgColor="#FDFBED" />
+        <ProductSkeleton />
+      </div>
+    )
+  }
 
+  if (error || !product)
+    return <div className="p-20 text-center text-rose-600">Product not found.</div>
+
+  /* ----------------- Derived ----------------- */
   const variants = Object.values(product.variants || {})
   const colorOptions = [
     ...new Set(
@@ -210,26 +262,23 @@ export default function ProductPage() {
     router.push("/cart")
   }
 
-const handleBuyNow = () => {
-  if (!selectedVariant) return toast.error("Please select a variant")
+  const handleBuyNow = () => {
+    if (!selectedVariant) return toast.error("Please select a variant")
 
-  const orderItem = {
-    id: product.id,
-    title: product.title,
-    slug: product.handle,
-    price: currentPrice,
-    qty,
-    variant: selectedColor || "default",
-    image: selectedVariant.images?.[0]?.url || product.media?.[0]?.url,
-    sku: product.sku,
+    const orderItem = {
+      id: product.id,
+      title: product.title,
+      slug: product.handle,
+      price: currentPrice,
+      qty,
+      variant: selectedColor || "default",
+      image: selectedVariant.images?.[0]?.url || product.media?.[0]?.url,
+      sku: product.sku,
+    }
+
+    const queryStr = `?buyNow=${encodeURIComponent(JSON.stringify(orderItem))}`
+    router.push(`/checkout${queryStr}`)
   }
-
-  // encode into query string
-  const query = `?buyNow=${encodeURIComponent(JSON.stringify(orderItem))}`
-  router.push(`/checkout${query}`)
-}
-
-
 
   /* ----------------- Delivery check ----------------- */
   const checkPin = (e) => {
@@ -239,8 +288,9 @@ const handleBuyNow = () => {
     setDeliveryMsg("Estimated delivery: 3–7 days 🚚")
   }
 
+  /* ----------------- Render ----------------- */
   return (
-    <div className="bg-white relative z-0 pt-[72px]">
+    <div className="bg-white relative z-0 pt-[100px] md:pt-[120px]">
       {/* Breadcrumbs */}
       <Breadcrumbs
         product={{
@@ -248,7 +298,6 @@ const handleBuyNow = () => {
           categoryName: category?.name,
           categorySlug: category?.slug,
         }}
-        loading={loading}
         bgColor="#FDFBED"
       />
 
@@ -269,26 +318,19 @@ const handleBuyNow = () => {
                     : "border-neutral-200 hover:border-neutral-400"
                 )}
               >
-                <Image
-                  src={img}
-                  alt={`${product.title} ${i + 1}`}
-                  fill
-                  className="object-cover"
-                  sizes="80px"
-                  loading="lazy"
-                />
+                <FadeImage src={img} alt={`${product.title} ${i + 1}`} fill sizes="80px" />
               </button>
             ))}
           </div>
 
           {/* Main image */}
           <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-neutral-100">
-            <Image
+            <FadeImage
               src={mainImg}
               alt={product.title}
               fill
               priority
-              className="object-cover hover:scale-105 transition-transform"
+              className="hover:scale-105 transition-transform"
             />
           </div>
 
@@ -305,21 +347,14 @@ const handleBuyNow = () => {
                     : "border-neutral-200 hover:border-neutral-400"
                 )}
               >
-                <Image
-                  src={img}
-                  alt={`${product.title} ${i + 1}`}
-                  fill
-                  className="object-cover"
-                  sizes="80px"
-                  loading="lazy"
-                />
+                <FadeImage src={img} alt={`${product.title} ${i + 1}`} fill sizes="80px" />
               </button>
             ))}
           </div>
         </div>
 
         {/* Info */}
-        <div className="space-y-6">
+                <div className="space-y-6">
           {/* Name + Price */}
           <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
             {product.title}

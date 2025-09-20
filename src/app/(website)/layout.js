@@ -2,12 +2,10 @@
 
 import Navbar from "@/components/layout/Navbar"
 import Footer from "@/components/layout/Footer"
-import Loader from "@/components/layout/Loader"
 
 export default function WebsiteLayout({ children }) {
   return (
     <>
-      <Loader />
       <Navbar />
       <main>{children}</main>  
       <Footer />
