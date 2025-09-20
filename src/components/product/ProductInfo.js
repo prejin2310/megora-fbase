@@ -272,46 +272,62 @@ export default function ProductInfo({
       </div>
 
             {/* Delivery Check */}
-      <form onSubmit={checkPin} className="pt-2">
-        <div className="text-sm font-medium text-gray-800">
-          Check delivery availability
-        </div>
-        <div className="mt-2 flex max-w-md gap-2">
-          <input
-            value={pin}
-            onChange={(e) => setPin(e.target.value)}
-            placeholder="Enter pincode"
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-brand"
-          />
-          <button
-            type="submit"
-            className="rounded-lg bg-brand px-4 py-2 text-white"
-          >
-            Check
-          </button>
-        </div>
-        {deliveryMsg && (
-          <div className="mt-2 text-sm text-gray-700 animate-fadeIn">
-            {deliveryMsg}
-          </div>
-        )}
-      </form>
+{/* Delivery Check – premium styled */}
+<form onSubmit={checkPin} className="pt-3">
+  <div className="flex items-center gap-2 text-sm font-medium text-gray-800 mb-2">
+    <TruckIcon className="h-5 w-5 text-brand" />
+    <span>Check Delivery Availability</span>
+  </div>
+  <div className="flex max-w-md gap-2 bg-neutral-50 border border-gray-200 rounded-lg p-2">
+    <input
+      value={pin}
+      onChange={(e) => setPin(e.target.value)}
+      placeholder="Enter pincode"
+      className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand"
+    />
+    <button
+      type="submit"
+      className="rounded-md bg-brand px-4 py-2 text-white text-sm hover:bg-brand-dark transition"
+    >
+      Check
+    </button>
+  </div>
+  {deliveryMsg && (
+    <div className="mt-2 text-sm text-gray-700 flex items-center gap-2 animate-fadeIn">
+      <TruckIcon className="h-4 w-4 text-green-600" />
+      {deliveryMsg}
+    </div>
+  )}
+</form>
 
       {/* Trust Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t pt-4 mt-4 text-sm text-gray-700">
-        <div className="flex items-center gap-2">
-          <ShieldCheckIcon className="h-5 w-5 text-emerald-600" />
-          <span>Secure Payments</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <TruckIcon className="h-5 w-5 text-blue-600" />
-          <span>Free Shipping above ₹599</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <ArrowPathRoundedSquareIcon className="h-5 w-5 text-orange-600" />
-          <span>7-day Easy Returns</span>
-        </div>
-      </div>
+{/* Trust Section – redesigned */}
+<div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6">
+  <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-neutral-50 p-3">
+    <ShieldCheckIcon className="h-6 w-6 text-emerald-600" />
+    <div>
+      <div className="text-sm font-medium text-gray-900">Secure Payments</div>
+      <div className="text-xs text-gray-500">UPI, Cards, Netbanking</div>
+    </div>
+  </div>
+
+  <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-neutral-50 p-3">
+    <TruckIcon className="h-6 w-6 text-blue-600" />
+    <div>
+      <div className="text-sm font-medium text-gray-900">Free Shipping</div>
+      <div className="text-xs text-gray-500">On orders above ₹599</div>
+    </div>
+  </div>
+
+  <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-neutral-50 p-3">
+    <ArrowPathRoundedSquareIcon className="h-6 w-6 text-orange-600" />
+    <div>
+      <div className="text-sm font-medium text-gray-900">Easy Returns</div>
+      <div className="text-xs text-gray-500">Return policy</div>
+    </div>
+  </div>
+</div>
+
     </div>
   )
 }
