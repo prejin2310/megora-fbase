@@ -1,69 +1,94 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect } from "react"
+import { db } from "@/lib/firebase"
+import { auth } from "@/lib/firebase"
+import { onAuthStateChanged } from "firebase/auth"
+import { doc, setDoc, getDoc } from "firebase/firestore"
+import toast from "react-hot-toast"
 
 const CartContext = createContext()
+export const useCart = () => useContext(CartContext)
 
 export function CartProvider({ children }) {
   const [cart, setCart] = useState([])
+  const [user, setUser] = useState(null)
 
-  // Load from localStorage on first render
+  /* ----------------- Auth listener ----------------- */
   useEffect(() => {
-    const stored = localStorage.getItem("cart")
-    if (stored) setCart(JSON.parse(stored))
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      setUser(u)
+      if (u) {
+        try {
+          const ref = doc(db, "users", u.uid, "meta", "cart")
+          const snap = await getDoc(ref)
+          if (snap.exists()) {
+            setCart(snap.data().items || [])
+          } else {
+            setCart([])
+          }
+        } catch (err) {
+          console.error("Failed to load cart:", err)
+        }
+      } else {
+        setCart([])
+      }
+    })
+    return () => unsub()
   }, [])
 
-  // Save to localStorage whenever cart changes
+  /* ----------------- Firestore sync ----------------- */
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart))
-  }, [cart])
+    if (!user) return
+    const ref = doc(db, "users", user.uid, "meta", "cart")
+    setDoc(ref, { items: cart }, { merge: true }).catch((err) =>
+      console.error("Cart sync failed:", err)
+    )
+  }, [cart, user])
 
-  const addToCart = (product, variant, qty = 1) => {
+  /* ----------------- Cart Actions ----------------- */
+  const addItem = (item) => {
+    if (!user) {
+      toast.error("Please login to add items to cart")
+      return
+    }
+
     setCart((prev) => {
-      const existing = prev.find(
-        (item) => item.productId === product.id && item.variantId === variant.id
-      )
-      if (existing) {
-        return prev.map((item) =>
-          item.productId === product.id && item.variantId === variant.id
-            ? { ...item, qty: item.qty + qty }
-            : item
+      const exists = prev.find((p) => p.id === item.id)
+      if (exists) {
+        return prev.map((p) =>
+          p.id === item.id ? { ...p, qty: p.qty + item.qty } : p
         )
       }
-      return [
-        ...prev,
-        {
-          productId: product.id,
-          title: product.title,
-          variantId: variant.id,
-          options: variant.options,
-          price: variant.priceINR,
-          fakePrice: variant.fakePriceINR,
-          qty,
-          image:
-            variant.images?.find((im) => im.thumbnail)?.url ||
-            product.media?.find((m) => m.thumbnail)?.url ||
-            "/demo/product1.jpg",
-        },
-      ]
+      return [...prev, item]
     })
+
+    toast.success("Added to cart")
   }
 
-  const removeFromCart = (productId, variantId) => {
-    setCart((prev) =>
-      prev.filter((item) => !(item.productId === productId && item.variantId === variantId))
-    )
+  const removeItem = (id) => {
+    if (!user) return
+    setCart((prev) => prev.filter((p) => p.id !== id))
+    toast.success("Removed from cart")
   }
 
-  const clearCart = () => setCart([])
+  const clearCart = () => {
+    if (!user) return
+    setCart([])
+    toast.success("Cart cleared")
+  }
+
+  const buyNow = (item) => {
+    if (!user) return toast.error("Please login to continue")
+    sessionStorage.setItem("buyNow", JSON.stringify(item))
+    window.location.href = "/checkout?buyNow=true"
+  }
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart }}>
+    <CartContext.Provider
+      value={{ cart, addItem, removeItem, clearCart, buyNow }}
+    >
       {children}
     </CartContext.Provider>
   )
-}
-
-export function useCart() {
-  return useContext(CartContext)
 }

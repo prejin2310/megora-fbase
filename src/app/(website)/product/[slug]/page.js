@@ -152,22 +152,7 @@ export default function ProductPage() {
     if (match?.images?.length) setMainImg(match.images[0].url)
   }, [selectedColor, product])
 
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-7xl px-4 py-10 animate-pulse">
-        <div className="grid md:grid-cols-2 gap-10">
-          <div className="h-[500px] bg-neutral-200 rounded-xl" />
-          <div className="space-y-4">
-            <div className="h-8 w-2/3 bg-neutral-200 rounded" />
-            <div className="h-6 w-1/3 bg-neutral-200 rounded" />
-            <div className="h-10 w-40 bg-neutral-200 rounded" />
-            <div className="h-6 w-2/3 bg-neutral-200 rounded" />
-          </div>
-        </div>
-      </div>
-    )
-  }
-
+  if (loading) return <div className="p-10 text-center">Loading…</div>
   if (error || !product) return <div className="p-20 text-center text-rose-600">Product not found.</div>
 
   const variants = Object.values(product.variants || {})
@@ -215,7 +200,6 @@ export default function ProductPage() {
       image: selectedVariant.images?.[0]?.url || product.media?.[0]?.url,
       sku: product.sku,
     })
-    toast.success("Added to cart")
   }
 
   const handleBuyNow = () => {
@@ -256,14 +240,13 @@ export default function ProductPage() {
       <div className="mx-auto max-w-7xl grid gap-10 px-4 py-8 md:grid-cols-2">
         {/* Gallery */}
         <div className="w-full grid md:grid-cols-[80px_1fr] gap-3">
-          {/* Desktop thumbnails */}
-          <div className="hidden md:flex md:flex-col gap-3 overflow-y-auto max-h-[500px]">
+          <div className="hidden md:flex md:flex-col gap-3 overflow-y-auto md:max-h-[520px]">
             {variantImages.map((img, i) => (
               <button
                 key={i}
                 onClick={() => setMainImg(img)}
                 className={clsx(
-                  "relative aspect-square w-[70px] flex-shrink-0 overflow-hidden rounded-lg border transition",
+                  "relative aspect-square w-20 flex-shrink-0 overflow-hidden rounded-lg border transition",
                   mainImg === img
                     ? "border-brand ring-2 ring-brand"
                     : "border-neutral-200 hover:border-neutral-400"
@@ -274,55 +257,66 @@ export default function ProductPage() {
                   alt={`${product.title} ${i + 1}`}
                   fill
                   className="object-cover"
-                  sizes="70px"
+                  sizes="80px"
                 />
               </button>
             ))}
           </div>
-
-          {/* Main preview */}
           <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-neutral-100">
             <Image
               src={mainImg}
               alt={product.title}
               fill
               priority
-              className="object-cover hover:scale-105 transition-transform duration-500"
+              className="object-cover hover:scale-105 transition-transform"
             />
+          </div>
+          {/* Thumbnails below main image on mobile */}
+          <div className="flex md:hidden gap-3 overflow-x-auto mt-3">
+            {variantImages.map((img, i) => (
+              <button
+                key={i}
+                onClick={() => setMainImg(img)}
+                className={clsx(
+                  "relative aspect-square w-20 flex-shrink-0 overflow-hidden rounded-lg border transition",
+                  mainImg === img
+                    ? "border-brand ring-2 ring-brand"
+                    : "border-neutral-200 hover:border-neutral-400"
+                )}
+              >
+                <Image
+                  src={img}
+                  alt={`${product.title} ${i + 1}`}
+                  fill
+                  className="object-cover"
+                  sizes="80px"
+                />
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Mobile thumbnails */}
-        <div className="flex gap-3 overflow-x-auto md:hidden mt-3">
-          {variantImages.map((img, i) => (
-            <button
-              key={i}
-              onClick={() => setMainImg(img)}
-              className={clsx(
-                "relative aspect-square w-20 flex-shrink-0 overflow-hidden rounded-lg border transition",
-                mainImg === img
-                  ? "border-brand ring-2 ring-brand"
-                  : "border-neutral-200 hover:border-neutral-400"
-              )}
-            >
-              <Image
-                src={img}
-                alt={`${product.title} ${i + 1}`}
-                fill
-                className="object-cover"
-                sizes="80px"
-              />
-            </button>
-          ))}
-        </div>
-
         {/* Info */}
-        <div className="space-y-5 md:space-y-6">
-          <h1 className="text-xl md:text-3xl font-semibold text-gray-900">
+        <div className="space-y-6">
+          {/* Top Meta */}
+          <div className="text-sm text-gray-700 flex items-center gap-4">
+            {product.sku && <span>SKU: {product.sku}</span>}
+            {category?.name && (
+              <span>
+                Category:{" "}
+                <Link href={`/category/${category.slug}`} className="text-brand hover:underline">
+                  {category.name}
+                </Link>
+              </span>
+            )}
+          </div>
+
+          {/* Title */}
+          <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
             {product.title}
           </h1>
 
-          {/* Price & Offer */}
+          {/* Price */}
           <div className="flex items-center gap-3">
             {fakePrice && (
               <span className="text-lg text-gray-500 line-through">
@@ -335,19 +329,6 @@ export default function ProductPage() {
             {discount && (
               <span className="text-sm font-medium text-emerald-600">
                 {discount}% OFF
-              </span>
-            )}
-          </div>
-
-          {/* SKU + Category */}
-          <div className="text-sm text-gray-600">
-            {product.sku && <span className="mr-4">SKU: {product.sku}</span>}
-            {category?.name && (
-              <span>
-                Category:{" "}
-                <Link href={`/category/${category.slug}`} className="text-brand hover:underline">
-                  {category.name}
-                </Link>
               </span>
             )}
           </div>
@@ -374,12 +355,11 @@ export default function ProductPage() {
                   <button
                     key={c}
                     onClick={() => setSelectedColor(c)}
-                    className={clsx(
-                      "flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm",
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm ${
                       selectedColor === c
-                        ? "border-2 border-brand ring-1 ring-brand"
+                        ? "border-brand ring-2 ring-brand"
                         : "border-gray-300 hover:border-gray-400"
-                    )}
+                    }`}
                   >
                     <span
                       className="h-4 w-4 rounded-full border border-gray-300"
@@ -401,18 +381,14 @@ export default function ProductPage() {
             </div>
             <button
               onClick={() => toggleWishlist(product)}
-              className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm ${
+              className={`flex items-center gap-1 rounded-full border px-4 py-2 text-sm ${
                 isWishlisted?.(product.id)
                   ? "border-amber-500 text-amber-700"
                   : "border-gray-300 hover:border-gray-500"
               }`}
             >
-              <HeartIcon
-                className={`h-4 w-4 ${
-                  isWishlisted?.(product.id) ? "text-amber-600" : "text-gray-400"
-                }`}
-              />
-              {isWishlisted?.(product.id) ? "Wishlisted" : "Add to Wishlist"}
+              <HeartIcon className="h-4 w-4" />
+              {isWishlisted?.(product.id) ? "Wishlisted" : "Wishlist"}
             </button>
           </div>
 
@@ -421,14 +397,14 @@ export default function ProductPage() {
             <button
               onClick={handleAddToCart}
               disabled={!selectedVariant?.stock}
-              className="flex items-center gap-2 rounded-lg bg-brand px-6 py-3 text-white shadow hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 w-full md:w-auto justify-center"
+              className="flex items-center gap-2 rounded-lg bg-brand px-6 py-3 text-white shadow hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ShoppingBagIcon className="h-5 w-5" /> Add to Cart
             </button>
             <button
               onClick={handleBuyNow}
               disabled={!selectedVariant?.stock}
-              className="rounded-lg border border-brand px-6 py-3 text-brand hover:bg-brand/5 disabled:cursor-not-allowed disabled:opacity-50 w-full md:w-auto"
+              className="rounded-lg border border-brand px-6 py-3 text-brand hover:bg-brand/5 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Buy Now
             </button>
@@ -452,7 +428,7 @@ export default function ProductPage() {
               </button>
             </div>
             {deliveryMsg && (
-              <div className="mt-2 text-sm text-gray-700 flex items-center gap-2 animate-fadeIn">
+              <div className="mt-2 text-sm text-gray-700 flex items-center gap-2">
                 <TruckIcon className="h-4 w-4 text-green-600" /> {deliveryMsg}
               </div>
             )}
