@@ -6,29 +6,25 @@ import Link from "next/link"
 import clsx from "clsx"
 import { HeartIcon, ShoppingBagIcon, EyeIcon } from "@heroicons/react/24/outline"
 import QuickViewModal from "@/components/product/QuickViewModal"
-import { getColorCode } from "@/lib/colors"   // ✅ use color util
+import { getColorCode } from "@/lib/colors"
 
 export default function ProductCard({ product }) {
   const [quickView, setQuickView] = useState(false)
 
-  // ✅ Pick thumbnail
   const thumbnail =
     product.media?.find((m) => m.thumbnail)?.url || "/demo/product1.jpg"
 
-  // ✅ Stock calculation
   const totalStock =
     product.variants?.reduce((sum, v) => sum + (Number(v.stock) || 0), 0) ||
     product.stock ||
     0
 
-  // ✅ Pricing
   const prices = product.variants?.map((v) => v.priceINR) || []
   const price = prices.length > 0 ? Math.min(...prices) : 0
   const fakePrices = product.variants?.map((v) => v.fakePriceINR) || []
   const fakePrice =
     fakePrices.length > 0 ? Math.max(...fakePrices) : Math.round(price * 1.2)
 
-  // ✅ Extract colors
   const colorOptions =
     product.variants
       ?.map((v) =>
@@ -38,19 +34,16 @@ export default function ProductCard({ product }) {
 
   return (
     <>
-      <div
-        className={clsx(
-          "group relative bg-white overflow-hidden transition-all duration-300",
-          "hover:-translate-y-2 hover:shadow-lg"
-        )}
-      >
+      <div className="group relative bg-white overflow-hidden shadow-sm transition-shadow duration-300 hover:shadow-lg">
         <Link href={`/product/${product.handle}`}>
-          {/* Out of Stock Overlay */}
+          {/* Out of Stock Banner */}
           {totalStock === 0 && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
-              <span className="text-white text-lg font-semibold">
-                Out of Stock
-              </span>
+            <div className="absolute inset-0 z-20 flex items-center justify-center">
+              <div className="bg-white/80 w-full py-3 text-center">
+                <span className="text-brand font-bold uppercase tracking-wide">
+                  OUT OF STOCK
+                </span>
+              </div>
             </div>
           )}
 
@@ -98,7 +91,7 @@ export default function ProductCard({ product }) {
                     <div
                       key={i}
                       className="w-5 h-5 border cursor-pointer"
-                      style={{ backgroundColor: getColorCode(name) }} // ✅ from colors.js
+                      style={{ backgroundColor: getColorCode(name) }}
                       title={name}
                     />
                   ))}
@@ -108,7 +101,7 @@ export default function ProductCard({ product }) {
           </div>
         </Link>
 
-        {/* Hover Icons (Wishlist, Add to Cart, Quick View) */}
+        {/* Hover Icons */}
         <div className="absolute inset-0 flex flex-col items-end justify-start gap-3 p-3 opacity-0 group-hover:opacity-100 transition z-20 pointer-events-none">
           <div className="flex flex-col gap-3 pointer-events-auto">
             <button className="bg-white p-2 shadow hover:bg-gray-100">

@@ -121,3 +121,35 @@ export async function getNewArrivals(count = 6) {
   const snapshot = await getDocs(q)
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
 }
+
+
+export async function getRandomProducts(limit = 10) {
+  try {
+    const snap = await getDocs(collection(db, "products"))
+    const allProducts = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+
+    // shuffle and take N
+    const shuffled = allProducts.sort(() => 0.5 - Math.random())
+    return shuffled.slice(0, limit)
+  } catch (err) {
+    console.error("Error fetching random products:", err)
+    return []
+  }
+}
+
+// Fetch products by categoryId
+export async function getProductsByCategory(categoryId, count = 10) {
+  try {
+    const q = query(
+      collection(db, "products"),
+      where("categoryId", "==", categoryId),
+      limit(count)
+    )
+
+    const snap = await getDocs(q)
+    return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  } catch (err) {
+    console.error("Error fetching products:", err)
+    return []
+  }
+}

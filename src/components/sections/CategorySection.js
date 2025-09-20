@@ -7,31 +7,41 @@ import { Navigation } from "swiper/modules"
 import "swiper/css"
 import "swiper/css/navigation"
 
-import { getNewArrivals } from "@/lib/db"
+import { getProductsByCategory } from "@/lib/db"
 import ProductCard from "@/components/product/ProductCard"
 
-export default function NewArrivals() {
+export default function CategorySection({
+  categoryKey,
+  title,
+  tagline,
+  limit = 10,
+}) {
   const [products, setProducts] = useState([])
 
   useEffect(() => {
     async function fetchProducts() {
-      const items = await getNewArrivals(10)
+      const items = await getProductsByCategory(categoryKey, limit)
       setProducts(items || [])
     }
     fetchProducts()
-  }, [])
+  }, [categoryKey, limit])
 
   return (
-    <section className="bg-brand py-14 relative">
+    <section className="bg-brand-light py-14 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-3xl md:text-4xl font-playfair font-bold text-white">
-            New Arrivals
-          </h2>
+          <div>
+            <h2 className="text-3xl md:text-4xl font-playfair font-bold text-brand">
+              {title}
+            </h2>
+            {tagline && (
+              <p className="text-sm text-gray-600">{tagline}</p>
+            )}
+          </div>
           <Link
-            href="/products"
-            className="text-sm font-medium text-white hover:underline"
+            href={`/category/${categoryKey}`}
+            className="text-sm font-medium text-brand hover:underline"
           >
             View All →
           </Link>
@@ -48,7 +58,7 @@ export default function NewArrivals() {
               768: { slidesPerView: 3 },
               1024: { slidesPerView: 5 },
             }}
-            className="z-10 relative" // ✅ prevent overlap
+            className="z-10 relative"
           >
             {products.map((product, i) => (
               <SwiperSlide key={product.id}>
@@ -62,7 +72,7 @@ export default function NewArrivals() {
             ))}
           </Swiper>
         ) : (
-          <p className="text-center text-white">No products available</p>
+          <p className="text-center text-brand">No products available</p>
         )}
       </div>
     </section>
