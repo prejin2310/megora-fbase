@@ -81,10 +81,10 @@ export default function ProductCard({ product }) {
         <div className="p-4">
           <h3 className="font-medium text-brand text-lg line-clamp-1">{product.title}</h3>
           <div className="mt-1 flex items-center gap-2">
-            <span className="text-brand font-semibold">₹{price}</span>
             {fakePrice > price && (
               <span className="line-through text-gray-400 text-sm">₹{fakePrice}</span>
             )}
+            <span className="text-brand font-semibold">₹{price}</span>
           </div>
 
           {/* Colors */}
@@ -120,16 +120,16 @@ export default function ProductCard({ product }) {
 function getColorHex(name) {
   switch (name.toLowerCase()) {
     case "emerald":
-      return "#00674F"
+      return "#025340ff"
     case "ruby":
-      return "#850014"
+      return "#b41c33ff"
     case "violet":
       return "#310b56"
     case "gold":
-      return "#FFD700"
+      return "#ccaf08ff"
     case "silver":
       return "#C0C0C0"
     default:
-      return "#999"
+      return "#d6d5d5ff"
   }
 }

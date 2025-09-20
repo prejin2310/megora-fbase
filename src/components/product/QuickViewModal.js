@@ -5,7 +5,6 @@ import Image from "next/image"
 import { Dialog } from "@headlessui/react"
 import { XMarkIcon } from "@heroicons/react/24/outline"
 import clsx from "clsx"
-import { motion } from "framer-motion" // ✅ Tilt/zoom
 
 export default function QuickViewModal({ open, onClose, product }) {
   const [selectedVariant, setSelectedVariant] = useState(product.variants?.[0] || null)
@@ -70,20 +69,32 @@ export default function QuickViewModal({ open, onClose, product }) {
                 ))}
               </div>
 
-              {/* Main Image with Zoom + Tilt */}
-              <motion.div
-                className="flex-1 relative rounded-lg overflow-hidden"
-                whileHover={{ scale: 1.05, rotateX: 2, rotateY: -2 }}
-                transition={{ type: "spring", stiffness: 200 }}
+              {/* Main Image with Native Hover Zoom */}
+              <div
+                className="flex-1 relative rounded-lg overflow-hidden group"
+                onMouseLeave={(e) => {
+                  const img = e.currentTarget.querySelector("img")
+                  img.style.transform = "scale(1)"
+                  img.style.transformOrigin = "center"
+                }}
+                onMouseMove={(e) => {
+                  const img = e.currentTarget.querySelector("img")
+                  const { left, top, width, height } =
+                    e.currentTarget.getBoundingClientRect()
+                  const x = ((e.pageX - left) / width) * 100
+                  const y = ((e.pageY - top) / height) * 100
+                  img.style.transformOrigin = `${x}% ${y}%`
+                  img.style.transform = "scale(2)" // zoom level
+                }}
               >
                 <Image
                   src={selectedImage}
                   alt={product.title}
                   width={500}
                   height={500}
-                  className="rounded-lg object-cover w-full h-[450px]"
+                  className="rounded-lg object-cover w-full h-[450px] transition-transform duration-200 ease-in-out"
                 />
-              </motion.div>
+              </div>
             </div>
 
             {/* Info */}
@@ -220,16 +231,16 @@ function getOptionTitles(variants) {
 function getColorHex(name) {
   switch (name?.toLowerCase()) {
     case "emerald":
-      return "#00674F"
+      return "#025340ff"
     case "ruby":
-      return "#850014"
+      return "#b41c33ff"
     case "violet":
       return "#310b56"
     case "gold":
-      return "#FFD700"
+      return "#ccaf08ff"
     case "silver":
       return "#C0C0C0"
     default:
-      return "#999"
+      return "#d6d5d5ff"
   }
 }
