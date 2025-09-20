@@ -68,21 +68,21 @@ export default function Navbar() {
   const toggleCurrency = () =>
     setCurrency((prev) => (prev === "INR" ? "USD" : "INR"))
 
-  // Navbar bg color logic
+  // ✅ Navbar background logic
   const isHome = pathname === "/"
   const navbarBg =
-    !isHome || scrolled ? "bg-brand-green shadow-md" : "bg-transparent"
+    isHome && !scrolled
+      ? "bg-transparent"
+      : "bg-brand shadow-md transition-colors duration-300"
 
   return (
-    <header
-      className={`fixed top-0 left-0 w-full z-50 transition-colors duration-300 ${navbarBg}`}
-    >
+    <header className={`fixed top-0 left-0 w-full z-50 ${navbarBg}`}>
       {/* Free shipping bar */}
       <p
         className={`flex h-10 items-center justify-center px-4 text-sm font-medium ${
-          scrolled || !isHome
-            ? "bg-white text-brand-green"
-            : "bg-white/70 text-brand-green backdrop-blur-md"
+          isHome && !scrolled
+            ? "bg-white/70 text-brand backdrop-blur-md"
+            : "bg-white text-brand"
         }`}
       >
         Free Shipping on All Orders Above ₹599
@@ -143,7 +143,7 @@ export default function Navbar() {
                   </button>
                 </div>
 
-                {/* Results */}
+                {/* Search results */}
                 {showResults && (
                   <div className="absolute mt-2 w-full bg-white shadow-lg rounded-lg z-50 max-h-72 overflow-y-auto">
                     {results.length > 0 ? (
@@ -175,7 +175,7 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* Mobile search toggle */}
+            {/* Mobile search */}
             <button
               className="lg:hidden text-white"
               onClick={() => setMobileSearch((p) => !p)}
@@ -210,7 +210,7 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile search */}
+        {/* Mobile expanded search */}
         {mobileSearch && (
           <div className="mt-2 mb-4 lg:hidden">
             <div className="flex items-center rounded-md bg-white/90 px-3 py-2 shadow backdrop-blur-md">
