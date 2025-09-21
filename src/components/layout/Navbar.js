@@ -27,17 +27,17 @@ import { logoutUser } from "@/lib/auth"
 
 const curatedSearches = [
   {
-    title: "Bridal Heirlooms",
-    subtitle: "Opulent kundan & polki ensembles",
+    title: "Rental Available Now",
+    subtitle: "Indulge in fine jewelry, now available to rent for your special moments.",
     query: "bridal set",
-    badge: "Bridal Edit",
+    badge: "Rental Luxe",
     accent: "from-amber-100 via-white to-rose-100",
   },
   {
-    title: "Everyday Icons",
-    subtitle: "Minimal chains crafted for daily luxe",
+    title: "Anti-Tarnish Products",
+    subtitle: "Advanced anti-tarnish jewelry, Coming Soon",
     query: "necklace",
-    badge: "Daily Luxe",
+    badge: "Forever Shine",
     accent: "from-emerald-100 via-white to-slate-100",
   },
   {
@@ -50,23 +50,23 @@ const curatedSearches = [
 ]
 
 const trendingSearches = [
-  "polki necklace",
-  "emerald ring",
-  "kundan choker",
-  "delicate bracelet",
-  "men band",
+  "AD Stone",
+  "Anti Tarnish",
+  "Necklace",
+  "Bridal Combo",
+  "Haram",
 ]
 
 const editorialHighlights = [
   {
-    title: "Artisan Craft",
-    copy: "Meet the craftsmen shaping each limited-edition silhouette.",
-    href: "/collections/artisan",
+    title: "Upcoming Diwali Sale",
+    copy: "Celebrate the festival of lights with exclusive festive offers.",
+    href: "#",
   },
   {
-    title: "Care Rituals",
-    copy: "Curate your own ritual to preserve every lustre & facet.",
-    href: "/journal/care-guide",
+    title: "Heritage Glow",
+    copy: "Uncover timeless traditions and designs reimagined for today.",
+    href: "#",
   },
 ]
 
