@@ -22,14 +22,14 @@ export default function HeroBanner() {
       <div className="relative z-10 mx-auto flex min-h-[760px] max-w-7xl flex-col justify-end gap-10 px-4 pb-16 pt-24 text-white md:flex-row md:items-end md:justify-between">
         <div className="max-w-xl space-y-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em]">
-            Megora Atelier
+            Megora Signature
           </div>
           <div className="space-y-4">
             <h1 className="font-playfair text-4xl leading-tight sm:text-5xl md:text-[52px]">
-              Heirloom-worthy jewels for every moment.
+              Your Signature,<br/> Your Sparkle!
             </h1>
             <p className="text-sm text-white/85 sm:text-base">
-              Discover anti-tarnish silhouettes, handset stones, and concierge-level styling. Each limited drop is photographed in natural light so you receive exactly what you fall in love with online.
+              Discover jewelry that reflects your essence uniquely crafted, timelessly elegant, and made to shine with you in every moment.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">

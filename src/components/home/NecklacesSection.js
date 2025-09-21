@@ -60,20 +60,20 @@ export default function NecklacesSection() {
         <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="space-y-4 md:max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.35em] text-brand/70">
-              Signature necklaces
+              Signature Necklaces
             </p>
             <h2 className="font-playfair text-3xl text-brand md:text-4xl">
-              Layer-worthy silhouettes that frame every neckline.
+              One edit. Many moods. Always elegant.
             </h2>
             <p className="text-sm text-gray-600">
-              From kundan chokers to barely-there chains, explore our signature edit curated for effortless stacking.
+              From bold chokers to simple chains, explore pieces perfect for layering or wearing solo.
             </p>
           </div>
           <Link
             href={`/category/${CATEGORY_KEY}`}
             className="inline-flex w-max items-center justify-center rounded-full border border-brand/20 px-6 py-2 text-sm font-semibold text-brand transition hover:bg-brand/10"
           >
-            Browse all necklaces
+            Browse All 
           </Link>
         </div>
 

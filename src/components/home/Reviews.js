@@ -76,10 +76,10 @@ export default function Reviews() {
               Community voices
             </p>
             <h2 className="font-playfair text-3xl text-brand md:text-4xl">
-              Loved by brides, collectors, and everyday jewelry lovers.
+              What Our Customers Say.
             </h2>
             <p className="text-sm text-gray-600">
-              Stories recreated with permission from WhatsApp, Instagram, and post-purchase surveys. Tap any card to read the full review and view gallery shots.
+             Sharing valuable feedback from our happy customers on WhatsApp and Instagram. Tap any card to read the full review and view gallery shots.
             </p>
           </div>
           <Link

@@ -44,7 +44,7 @@ export default function Categories() {
             Navigate by style to discover matching sets instantly.
           </h2>
           <p className="mx-auto max-w-2xl text-sm text-gray-600">
-            Tap a category to explore curated collections with filters and styling notes handpicked by our in-house stylists.
+            Discover jewelry by category, complete with matching sets and effortless styling notes.
           </p>
         </div>
 

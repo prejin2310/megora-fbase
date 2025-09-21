@@ -193,10 +193,10 @@ export default function DealOfDay() {
             <span className="rounded-full border border-brand/20 px-3 py-1">Ends tonight</span>
           </div>
           <h2 className="font-playfair text-3xl leading-tight text-brand md:text-4xl">
-            Limited-hour pricing on our artisan highlight.
+            Today’s pick, Tomorrow’s regret.
           </h2>
           <p className="max-w-xl text-sm leading-relaxed text-brand/70">
-            A collector favourite with lifetime plating support and complimentary polishing vouchers. Once the timer resets, a new piece is featured automatically.
+            Exclusive pricing for 24 hours only. New jewel revealed daily.
           </p>
 
           <div className="flex items-center gap-6">

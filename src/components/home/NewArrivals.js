@@ -53,17 +53,17 @@ export default function NewArrivals() {
               New arrivals
             </p>
             <h2 className="font-playfair text-3xl leading-tight md:text-4xl">
-              Fresh from the atelier: limited drops for the week.
+              Handpicked. Limited. Loved.
             </h2>
             <p className="text-sm text-white/75">
-              Glide through this week&apos;s capsule pieces. Tap quick view or add to bag from the carousel without losing your place.
+              Explore, preview, and add to your bag in one smooth flow.
             </p>
           </div>
           <Link
             href="/products"
             className="inline-flex w-max items-center justify-center rounded-full border border-white/30 px-6 py-2 text-sm font-semibold text-white transition hover:bg-white/10"
           >
-            View full catalogue
+            View All
           </Link>
         </div>
 

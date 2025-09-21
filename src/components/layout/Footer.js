@@ -39,7 +39,7 @@ export default function Footer() {
               <Image src="/logoLan.png" alt="Megora Jewels" width={140} height={60} className="object-contain" />
             </Link>
             <p className="text-sm text-white/70">
-              Megora Jewels curates limited-edition jewelry for modern icons. Hypoallergenic, hallmarked, and delivered with concierge-level service from Kerala to the world.
+              Handcrafted elegance for every occasion Megora Jewels brings you exquisite designs for timeless beauty.
             </p>
             <div className="flex items-center gap-3 text-sm text-white/70">
               <MapPinIcon className="h-5 w-5" />
@@ -70,9 +70,9 @@ export default function Footer() {
               </button>
             </form>
             <div className="space-y-3 text-sm text-white/70">
-              <a href="mailto:care@megora.in" className="flex items-center gap-2 hover:text-white">
+              <a href="mailto:megorajewels@gmail.com" className="flex items-center gap-2 hover:text-white">
                 <EnvelopeIcon className="h-5 w-5" />
-                care@megora.in
+                megorajewels@gmail.com
               </a>
               <a href="tel:+919876543210" className="flex items-center gap-2 hover:text-white">
                 <PhoneIcon className="h-5 w-5" />
@@ -83,7 +83,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-white/60 md:flex-row md:items-center md:justify-between">
-          <p>Copyright {year} Megora Jewels. Crafted with patience in India.</p>
+          <p>Copyright {year} Megora Jewels.</p>
           <p>
             Developed by{' '}
             <a
