@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import {
   collection,
   doc,
@@ -161,7 +162,7 @@ export default function ProductForm({
     if (!initialData?.handle || mode === "create") {
       setHandle(slugify(title));
     }
-  }, [title]); // eslint-disable-line
+  }, [initialData?.handle, mode, title]);
 
   // categories fetch
   useEffect(() => {
@@ -199,7 +200,7 @@ export default function ProductForm({
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [sku]);
+  }, [sku, mode, initialData?.id]);
 
   // ----- handlers -----
   const updateVariant = (idx, patch) => {
@@ -517,9 +518,9 @@ export default function ProductForm({
 
         {/* Live preview */}
         <div className="border rounded p-3">
-          <div className="aspect-square bg-gray-100 rounded overflow-hidden mb-3">
+          <div className="relative aspect-square bg-gray-100 rounded overflow-hidden mb-3">
             {mainThumbUrl ? (
-              <img src={mainThumbUrl} alt="thumb" className="w-full h-full object-cover" />
+              <Image src={mainThumbUrl} alt="Primary thumbnail" fill className="object-cover" sizes="(min-width: 768px) 25vw, 50vw" unoptimized />
             ) : (
               <div className="w-full h-full grid place-items-center text-gray-400 text-sm">
                 No image
@@ -677,8 +678,8 @@ export default function ProductForm({
 
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mt-3">
                   {v.images.map((im, j) => (
-                    <div key={j} className="relative border rounded overflow-hidden">
-                      <img src={im.url} alt="" className="w-full h-28 object-cover" />
+                    <div key={j} className="relative h-28 border rounded overflow-hidden">
+                      <Image src={im.url} alt="Variant image" fill className="object-cover" sizes="96px" unoptimized />
                       <div className="absolute left-1 top-1">
                         <button
                           type="button"

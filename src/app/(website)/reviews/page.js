@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import ReviewModal from "@/components/home/ReviewModal"
 
-// ✅ Demo reviews
+// Demo reviews
 const REVIEWS = [
   {
     name: "Ananya",
@@ -51,19 +52,17 @@ const REVIEWS = [
 
 function ReviewCard({ review, onClick }) {
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
-      className="relative rounded-xl bg-white shadow-md border border-brand/10 p-6 hover:shadow-lg transition cursor-pointer"
+      className="relative w-full text-left rounded-xl bg-white shadow-md border border-brand/10 p-6 hover:shadow-lg transition"
     >
-      {/* Quote mark */}
       <span className="absolute -top-4 left-6 text-6xl font-serif text-brand/10 select-none">
-        “
+        &ldquo;
       </span>
 
-      {/* Review text */}
       <p className="mt-4 text-sm text-gray-700 line-clamp-2">{review.text}</p>
 
-      {/* Reviewer */}
       <div className="mt-6 flex items-center gap-3">
         <div className="h-10 w-10 rounded-full bg-brand/10 flex items-center justify-center font-semibold text-brand">
           {review.name[0]}
@@ -73,7 +72,7 @@ function ReviewCard({ review, onClick }) {
           <p className="text-xs text-gray-500">Verified Buyer</p>
         </div>
       </div>
-    </div>
+    </button>
   )
 }
 
@@ -88,12 +87,14 @@ export default function ReviewsPage() {
 
   return (
     <section className="bg-brand-light min-h-screen">
-      {/* 🔹 Top Banner */}
       <div className="relative h-[40vh] min-h-[250px] w-full">
-        <img
-          src="/reviewBanner.webp" 
-          alt="Customer Reviews Banner"
-          className="absolute inset-0 h-full w-full object-cover"
+        <Image
+          src="/reviewBanner.webp"
+          alt="Customer Reviews"
+          fill
+          priority
+          className="object-cover"
+          sizes="100vw"
         />
         <div className="absolute inset-0 bg-black/60" />
         <div className="relative z-10 flex h-full items-center justify-center text-center">
@@ -103,20 +104,18 @@ export default function ReviewsPage() {
         </div>
       </div>
 
-      {/* Reviews Section */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
-        {/* Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {paginated.map((r, i) => (
-            <ReviewCard key={i} review={r} onClick={() => setSelected(r)} />
+            <ReviewCard key={r.orderId ?? i} review={r} onClick={() => setSelected(r)} />
           ))}
         </div>
 
-        {/* Pagination */}
         <div className="mt-10 flex justify-center gap-3">
           {Array.from({ length: totalPages }).map((_, i) => (
             <button
               key={i}
+              type="button"
               onClick={() => setPage(i + 1)}
               className={`px-4 py-2 rounded-md text-sm font-medium ${
                 page === i + 1
@@ -130,7 +129,6 @@ export default function ReviewsPage() {
         </div>
       </div>
 
-      {/* Modal */}
       {selected && (
         <ReviewModal review={selected} onClose={() => setSelected(null)} />
       )}

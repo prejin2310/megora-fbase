@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { db, storage } from "@/lib/firebase";
 import {
   doc,
   getDoc,
   setDoc,
-  updateDoc,
   collection,
   addDoc,
   deleteDoc,
@@ -15,8 +15,12 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import toast from "react-hot-toast";
 import {
-  card, cardBody, sectionTitle, subText,
-  inputBase, buttonPrimary, buttonGhost
+  card,
+  cardBody,
+  sectionTitle,
+  subText,
+  inputBase,
+  buttonPrimary,
 } from "@/components/admin/ui";
 
 export default function SettingsPage() {
@@ -104,7 +108,6 @@ export default function SettingsPage() {
         Settings
       </h1>
 
-      {/* Banner Section */}
       <section className={`${card} mb-6`}>
         <div className={cardBody}>
           <h2 className={sectionTitle}>Homepage Banner</h2>
@@ -119,11 +122,16 @@ export default function SettingsPage() {
             />
             <div>
               {bannerImage && (
-                <img
-                  src={bannerImage}
-                  alt="Banner"
-                  className="h-32 w-full object-cover rounded-lg mb-2"
-                />
+                <div className="relative mb-2 h-32 w-full overflow-hidden rounded-lg">
+                  <Image
+                    src={bannerImage}
+                    alt="Banner"
+                    fill
+                    className="object-cover"
+                    sizes="100vw"
+                    unoptimized
+                  />
+                </div>
               )}
               <label className="block">
                 <span className="text-sm text-gray-600">Upload new image</span>
@@ -143,7 +151,6 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {/* Categories Section */}
       <section className={card}>
         <div className={cardBody}>
           <h2 className={sectionTitle}>Categories</h2>

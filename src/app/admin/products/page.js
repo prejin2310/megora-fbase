@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   collection,
   getDocs,
@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
+import Image from "next/image";
 import toast from "react-hot-toast";
 
 const PAGE_SIZE = 8;
@@ -20,17 +21,17 @@ const PAGE_SIZE = 8;
 export default function ProductsListPage() {
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [cat, setCat] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState("skuAsc"); // default sort by SKU Asc
+  const [sortBy, setSortBy] = useState("skuAsc");
   const [loading, setLoading] = useState(true);
 
-  // pagination
   const [lastDoc, setLastDoc] = useState(null);
-  const [firstDoc, setFirstDoc] = useState(null);
   const [pageStack, setPageStack] = useState([]);
 
-  // fetch categories
+  const firstDocRef = useRef(null);
+  const lastDocRef = useRef(null);
+
   useEffect(() => {
     (async () => {
       try {
@@ -42,98 +43,98 @@ export default function ProductsListPage() {
     })();
   }, []);
 
-  const fetchProducts = async (direction = "first") => {
+  const fetchProducts = useCallback(async (direction = "first") => {
     setLoading(true);
     try {
       let q = query(collection(db, "products"), orderBy("title"), limit(PAGE_SIZE));
 
-      if (direction === "next" && lastDoc) {
-        q = query(collection(db, "products"), orderBy("title"), startAfter(lastDoc), limit(PAGE_SIZE));
-      } else if (direction === "prev" && firstDoc) {
+      if (direction === "next" && lastDocRef.current) {
         q = query(
           collection(db, "products"),
           orderBy("title"),
-          endBefore(firstDoc),
+          startAfter(lastDocRef.current),
+          limit(PAGE_SIZE)
+        );
+      } else if (direction === "prev" && firstDocRef.current) {
+        q = query(
+          collection(db, "products"),
+          orderBy("title"),
+          endBefore(firstDocRef.current),
           limitToLast(PAGE_SIZE)
         );
       }
 
       const snaps = await getDocs(q);
-      let list = snaps.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const docs = snaps.docs;
+      const list = docs.map((d) => ({ id: d.id, ...d.data() }));
 
-      if (list.length > 0) {
-        setFirstDoc(snaps.docs[0]);
-        setLastDoc(snaps.docs[snaps.docs.length - 1]);
-      }
-
-      if (direction === "next") {
-        setPageStack((s) => [...s, firstDoc]);
+      if (direction === "next" && firstDocRef.current) {
+        setPageStack((s) => [...s, firstDocRef.current]);
       } else if (direction === "prev") {
         setPageStack((s) => s.slice(0, -1));
-      } else {
+      } else if (direction === "first") {
         setPageStack([]);
       }
 
+      firstDocRef.current = docs[0] ?? null;
+      lastDocRef.current = docs.length === PAGE_SIZE ? docs[docs.length - 1] : null;
+
+      setLastDoc(lastDocRef.current);
       setItems(list);
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error(error);
       toast.error("Failed to load products");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchProducts("first");
-  }, []);
+  }, [fetchProducts]);
 
-  // filtering + sorting
   const filtered = useMemo(() => {
-    let r = [...items];
-    if (cat) r = r.filter((x) => (x.categoryId || "") === cat);
+    let result = [...items];
+    if (categoryFilter) result = result.filter((x) => (x.categoryId || "") === categoryFilter);
     if (search.trim()) {
-      const s = search.trim().toLowerCase();
-      r = r.filter(
+      const term = search.trim().toLowerCase();
+      result = result.filter(
         (x) =>
-          x.title?.toLowerCase().includes(s) ||
-          x.sku?.toLowerCase().includes(s) ||
-          x.handle?.toLowerCase().includes(s)
+          x.title?.toLowerCase().includes(term) ||
+          x.sku?.toLowerCase().includes(term) ||
+          x.handle?.toLowerCase().includes(term)
       );
     }
 
-    // ✅ Apply sorting
     if (sortBy === "skuAsc" || sortBy === "skuDesc") {
-      r.sort((a, b) => {
+      result.sort((a, b) => {
         const aNum = parseInt((a.sku || "").replace("MJ-", ""), 10) || 0;
         const bNum = parseInt((b.sku || "").replace("MJ-", ""), 10) || 0;
         return sortBy === "skuAsc" ? aNum - bNum : bNum - aNum;
       });
     } else if (sortBy === "title") {
-      r.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+      result.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
     }
 
-    return r;
-  }, [items, cat, search, sortBy]);
+    return result;
+  }, [items, categoryFilter, search, sortBy]);
 
-  const thumbOf = (p) => {
-    const m = p.media || [];
-    const t = m.find((i) => i.thumbnail) || m[0];
-    return t?.url || "";
+  const thumbOf = (product) => {
+    const media = product.media || [];
+    const thumbnail = media.find((item) => item.thumbnail) || media[0];
+    return thumbnail?.url || "";
   };
 
-  const isOutOfStock = (p) => {
-    if (!p.variants?.length) return false;
-    return p.variants.every((v) => (v.stock || 0) <= 0);
+  const isOutOfStock = (product) => {
+    if (!product.variants?.length) return false;
+    return product.variants.every((variant) => (variant.stock || 0) <= 0);
   };
 
   return (
     <div className="p-4 md:p-6">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-semibold">Products</h1>
-        <Link
-          href="/admin/products/add"
-          className="px-3 py-2 rounded bg-emerald-700 text-white"
-        >
+        <Link href="/admin/products/add" className="px-3 py-2 rounded bg-emerald-700 text-white">
           + Add
         </Link>
       </div>
@@ -147,8 +148,8 @@ export default function ProductsListPage() {
         />
         <select
           className="rounded border px-3 py-2"
-          value={cat}
-          onChange={(e) => setCat(e.target.value)}
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
         >
           <option value="">All categories</option>
           {categories.map((c) => (
@@ -164,49 +165,54 @@ export default function ProductsListPage() {
         >
           <option value="skuAsc">Sort by SKU (Ascending)</option>
           <option value="skuDesc">Sort by SKU (Descending)</option>
-          <option value="title">Sort by Title (A–Z)</option>
+          <option value="title">Sort by Title (A-Z)</option>
         </select>
-        <button
-          onClick={() => fetchProducts("first")}
-          className="rounded border px-3 py-2"
-        >
+        <button onClick={() => fetchProducts("first")} className="rounded border px-3 py-2">
           Refresh
         </button>
       </div>
 
       {loading ? (
-        <div>Loading…</div>
+        <div className="text-gray-500">Loading...</div>
       ) : filtered.length === 0 ? (
         <div className="text-gray-500">No products.</div>
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {filtered.map((p) => (
-              <Link
-                key={p.id}
-                href={`/admin/products/${p.id}`}
-                className="border rounded overflow-hidden hover:shadow relative"
-              >
-                <div className="aspect-square bg-gray-100">
-                  <img
-                    src={thumbOf(p) || "/placeholder.png"}
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="p-2">
-                  <div className="text-sm font-medium line-clamp-1">{p.title}</div>
-                  <div className="text-xs text-gray-500">{p.sku}</div>
-                  <div className="text-xs">{p.status}</div>
-                </div>
+            {filtered.map((product) => {
+              const thumbnail = thumbOf(product) || "/placeholder.png";
+              const alt = product.title ? `${product.title} thumbnail` : "Product thumbnail";
 
-                {isOutOfStock(p) && (
-                  <span className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-0.5 rounded">
-                    Out of Stock
-                  </span>
-                )}
-              </Link>
-            ))}
+              return (
+                <Link
+                  key={product.id}
+                  href={`/admin/products/${product.id}`}
+                  className="border rounded overflow-hidden hover:shadow relative"
+                >
+                  <div className="relative aspect-square bg-gray-100">
+                    <Image
+                      src={thumbnail}
+                      alt={alt}
+                      fill
+                      className="object-cover"
+                      sizes="(min-width: 1024px) 20vw, (min-width: 768px) 25vw, 50vw"
+                      unoptimized
+                    />
+                  </div>
+                  <div className="p-2">
+                    <div className="text-sm font-medium line-clamp-1">{product.title}</div>
+                    <div className="text-xs text-gray-500">{product.sku}</div>
+                    <div className="text-xs">{product.status}</div>
+                  </div>
+
+                  {isOutOfStock(product) && (
+                    <span className="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-0.5 rounded">
+                      Out of Stock
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
           </div>
 
           <div className="flex justify-center gap-4 mt-6">
