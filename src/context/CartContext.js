@@ -108,8 +108,9 @@ export function CartProvider({ children }) {
   }, [syncCart])
 
   const buyNow = useCallback((item) => {
-    sessionStorage.setItem("buyNow", JSON.stringify(item))
-    window.location.href = "/checkout?buyNow=true"
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("buyNow", JSON.stringify(item))
+    }
   }, [])
 
   const value = useMemo(

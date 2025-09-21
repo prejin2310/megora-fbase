@@ -89,6 +89,12 @@ export default function ProductCard({ product }) {
 
   const wishlistActive = Boolean(isWishlisted?.(product?.id))
 
+  const safeTitle = product?.title || "this Megora piece"
+  const whatsappMessage = encodeURIComponent(
+    `Hello Megora team, I'd like to pre-book the "${safeTitle}" from your website.`
+  )
+  const whatsappPrebookUrl = `https://wa.me/917736166728?text=${whatsappMessage}`
+
   const showColorTooltip = (color) => {
     window.clearTimeout(tooltipTimer.current || undefined)
     setActiveColor(color)
@@ -186,16 +192,6 @@ export default function ProductCard({ product }) {
             </div>
           </Link>
 
-          {limitedStock && (
-            <span className="absolute left-3 top-3 bg-brand px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white">
-              Limited
-            </span>
-          )}
-          {outOfStock && (
-            <span className="absolute inset-x-3 bottom-3 bg-white/95 px-4 py-1 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-rose-600">
-              Out of stock
-            </span>
-          )}
 
           <div className="absolute right-3 top-3 flex flex-col gap-2">
             <button
@@ -219,17 +215,19 @@ export default function ProductCard({ product }) {
             </button>
           </div>
 
+        </div>
+
           {limitedStock && (
-            <span className="absolute left-3 top-3 bg-brand px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white">
-              Limited
+            <span className="absolute left-3 top-3 rounded-full bg-brand px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-white">
+              Few left
             </span>
           )}
           {outOfStock && (
-            <span className="absolute inset-x-3 bottom-3 bg-white/95 px-4 py-1 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-rose-600">
+            <span className="absolute inset-x-3 bottom-3 rounded-full bg-white/95 px-4 py-1 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-rose-600">
               Out of stock
             </span>
           )}
-        </div>
+
 
         <div className="flex flex-1 flex-col gap-4 px-4 pb-4 pt-3">
           <div className="space-y-2">
@@ -241,11 +239,11 @@ export default function ProductCard({ product }) {
             </Link>
             <div className="flex items-baseline gap-3 text-sm">
               <span className="text-lg font-semibold text-brand">
-                ₹{priceINR.toLocaleString("en-IN")}
+                {"\u20B9" + priceINR.toLocaleString("en-IN")}
               </span>
               {mrpINR && mrpINR > priceINR && (
                 <span className="text-sm text-gray-400 line-through">
-                  ₹{mrpINR.toLocaleString("en-IN")}
+                  {"\u20B9" + mrpINR.toLocaleString("en-IN")}
                 </span>
               )}
             </div>
@@ -284,27 +282,39 @@ export default function ProductCard({ product }) {
           )}
 
           <div className="mt-auto flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={handleAddToCart}
-              className="flex w-full items-center justify-center gap-2 bg-brand px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
-            >
-              {outOfStock ? (
-                <>
+            {outOfStock ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setNotifyOpen(true)}
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
+                >
                   <BellAlertIcon className="h-5 w-5" />
                   Notify me
-                </>
-              ) : (
-                <>
-                  <ShoppingBagIcon className="h-5 w-5" />
-                  Add to cart
-                </>
-              )}
-            </button>
+                </button>
+                <a
+                  href={whatsappPrebookUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full items-center justify-center gap-2 rounded-full border border-brand/30 px-4 py-2 text-sm font-semibold text-brand transition hover:bg-brand/10"
+                >
+                  Pre-book via WhatsApp
+                </a>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
+              >
+                <ShoppingBagIcon className="h-5 w-5" />
+                Add to cart
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setQuickView(true)}
-              className="flex w-full items-center justify-center gap-2 border border-brand/20 px-4 py-2 text-sm font-semibold text-brand transition hover:bg-brand/10"
+              className="flex w-full items-center justify-center gap-2 rounded-full border border-brand/20 px-4 py-2 text-sm font-semibold text-brand transition hover:bg-brand/10"
             >
               Quick view
             </button>
@@ -387,4 +397,3 @@ export default function ProductCard({ product }) {
     </>
   )
 }
-

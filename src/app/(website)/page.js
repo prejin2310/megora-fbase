@@ -6,9 +6,8 @@ import HeroBanner from "@/components/home/HeroBanner"
 import NewArrivals from "@/components/home/NewArrivals"
 import NecklacesSection from "@/components/home/NecklacesSection"
 import DealOfDay from "@/components/home/DealOfDay"
-import FeatureHighlights from "@/components/home/FeatureHighlights"
-import VideoSpotlight from "@/components/home/VideoSpotlight"
 import Categories from "@/components/home/Categories"
+import VideoSpotlight from "@/components/home/VideoSpotlight"
 import Reviews from "@/components/home/Reviews"
 
 const LOADER_DELAY = 650
@@ -38,9 +37,8 @@ export default function HomePage() {
       <NewArrivals />
       <NecklacesSection />
       <DealOfDay />
-      <FeatureHighlights />
-      <VideoSpotlight />
       <Categories />
+      <VideoSpotlight />
       <Reviews />
     </div>
   )

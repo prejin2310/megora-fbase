@@ -43,6 +43,28 @@ const getDailyIndex = (length) => {
   return daySeed % length
 }
 
+const extractVariants = (item) => {
+  if (!item?.variants) return []
+  return Array.isArray(item.variants) ? item.variants : Object.values(item.variants)
+}
+
+const hasAvailableStock = (item) => {
+  if (!item) return false
+  const variants = extractVariants(item)
+  if (variants.length > 0) {
+    return variants.some((variant) => Number(variant?.stock ?? variant?.inventory ?? 0) > 0)
+  }
+  return Number(item?.stock ?? 0) > 0
+}
+
+const selectDealProduct = (items) => {
+  if (!Array.isArray(items) || items.length === 0) return null
+  const available = items.filter(hasAvailableStock)
+  if (available.length === 0) return null
+  const index = getDailyIndex(available.length)
+  return available[index]
+}
+
 export default function DealOfDay() {
   const cartContext = useCart() || {}
   const { addItem = () => {} } = cartContext
@@ -59,8 +81,8 @@ export default function DealOfDay() {
         const items = await getNewArrivals(10)
         if (!mounted) return
         if (Array.isArray(items) && items.length > 0) {
-          const index = getDailyIndex(items.length)
-          setProduct(items[index])
+          const deal = selectDealProduct(items)
+          setProduct(deal || null)
         } else {
           setProduct(null)
         }
@@ -92,12 +114,7 @@ export default function DealOfDay() {
     return () => window.clearInterval(timer)
   }, [target])
 
-  const variants = useMemo(() => {
-    if (!product?.variants) return []
-    return Array.isArray(product.variants)
-      ? product.variants
-      : Object.values(product.variants)
-  }, [product])
+  const variants = useMemo(() => extractVariants(product), [product])
 
   const primaryVariant = variants[0] || {}
 
@@ -124,9 +141,7 @@ export default function DealOfDay() {
   const heroImage =
     primaryVariant?.images?.[0]?.url || product?.media?.[0]?.url || "/demo/product1.jpg"
 
-  const stockValue =
-    primaryVariant?.stock ?? primaryVariant?.inventory ?? product?.stock ?? 0
-  const hasStock = Number(stockValue) > 0
+  const hasStock = hasAvailableStock(product)
 
   const handleAddToCart = () => {
     if (!product) return
@@ -148,13 +163,13 @@ export default function DealOfDay() {
   }
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-r from-[#003D3A] via-[#013430] to-[#003D3A] py-16 text-white">
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+    <section className="relative overflow-hidden bg-gradient-to-b from-[#FFEEDD] via-[#FFF6EF] to-white py-20 text-brand">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-[#F6D9C4] to-transparent" />
       <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 md:flex-row md:items-center">
-        <div className="relative w-full overflow-hidden rounded-[32px] border border-white/10 bg-white/10 shadow-2xl md:w-2/5">
+        <div className="relative w-full overflow-hidden rounded-[32px] border border-brand/10 bg-white shadow-2xl md:w-2/5">
           <div className="relative aspect-[4/5]">
             {loading ? (
-              <div className="absolute inset-0 animate-pulse rounded-[32px] bg-white/10" />
+              <div className="absolute inset-0 animate-pulse rounded-[32px] bg-brand/10" />
             ) : (
               <Image
                 src={heroImage}
@@ -166,21 +181,21 @@ export default function DealOfDay() {
             )}
           </div>
           {!loading && discount && (
-            <div className="absolute right-4 top-4 rounded-full bg-white/95 px-4 py-2 text-sm font-semibold text-brand">
+            <div className="absolute right-4 top-4 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-brand/30">
               Save {discount}%
             </div>
           )}
         </div>
 
         <div className="flex-1 space-y-6">
-          <div className="flex flex-wrap items-center gap-4 text-xs font-semibold uppercase tracking-[0.32em] text-white/70">
-            <span className="rounded-full border border-white/30 px-3 py-1">Deal of the day</span>
-            <span className="rounded-full border border-white/30 px-3 py-1">Ends tonight</span>
+          <div className="flex flex-wrap items-center gap-4 text-xs font-semibold uppercase tracking-[0.32em] text-brand/60">
+            <span className="rounded-full border border-brand/20 px-3 py-1">Deal of the day</span>
+            <span className="rounded-full border border-brand/20 px-3 py-1">Ends tonight</span>
           </div>
-          <h2 className="font-playfair text-3xl leading-tight md:text-4xl">
+          <h2 className="font-playfair text-3xl leading-tight text-brand md:text-4xl">
             Limited-hour pricing on our artisan highlight.
           </h2>
-          <p className="max-w-xl text-sm leading-relaxed text-white/80">
+          <p className="max-w-xl text-sm leading-relaxed text-brand/70">
             A collector favourite with lifetime plating support and complimentary polishing vouchers. Once the timer resets, a new piece is featured automatically.
           </p>
 
@@ -193,19 +208,19 @@ export default function DealOfDay() {
           {!loading && product && (
             <div className="space-y-6">
               <div>
-                <p className="text-sm text-white/60">Featured piece</p>
+                <p className="text-sm text-brand/60">Featured piece</p>
                 <Link
                   href={`/product/${product.handle || ""}`}
-                  className="mt-1 inline-flex items-center gap-2 text-lg font-semibold text-white underline-offset-4 hover:underline"
+                  className="mt-1 inline-flex items-center gap-2 text-lg font-semibold text-brand underline-offset-4 hover:underline"
                 >
                   {product.title}
                 </Link>
               </div>
               <div className="flex items-center gap-4 text-lg font-semibold">
-                <span className="text-2xl">₹{priceINR.toLocaleString("en-IN")}</span>
+                <span className="text-2xl text-brand">{"\u20B9" + priceINR.toLocaleString("en-IN")}</span>
                 {mrpINR && mrpINR > priceINR && (
-                  <span className="text-base text-white/60 line-through">
-                    ₹{mrpINR.toLocaleString("en-IN")}
+                  <span className="text-base text-brand/40 line-through">
+                    {"\u20B9" + mrpINR.toLocaleString("en-IN")}
                   </span>
                 )}
               </div>
@@ -214,17 +229,23 @@ export default function DealOfDay() {
                   type="button"
                   onClick={handleAddToCart}
                   disabled={!hasStock}
-                  className="flex flex-1 items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-brand shadow-lg transition hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex flex-1 items-center justify-center rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-brand/30 transition hover:shadow-xl disabled:cursor-not-allowed disabled:bg-brand/40"
                 >
                   {hasStock ? "Add to cart" : "Coming soon"}
                 </button>
                 <Link
                   href={`/product/${product.handle || ""}`}
-                  className="flex flex-1 items-center justify-center rounded-full border border-white/50 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                  className="flex flex-1 items-center justify-center rounded-full border border-brand/20 px-6 py-3 text-sm font-semibold text-brand transition hover:bg-brand/10"
                 >
                   View product
                 </Link>
               </div>
+            </div>
+          )}
+
+          {!loading && !product && (
+            <div className="rounded-3xl border border-brand/10 bg-white/85 p-6 text-sm text-brand/60">
+              Today&apos;s highlight is being prepared. Check back soon.
             </div>
           )}
         </div>
@@ -235,10 +256,24 @@ export default function DealOfDay() {
 
 function TimePill({ label, value }) {
   return (
-    <div className="flex flex-col items-center rounded-2xl border border-white/20 bg-white/10 px-6 py-4 shadow-inner">
-      <span className="text-3xl font-semibold">{value}</span>
-      <span className="mt-1 text-xs tracking-[0.2em] text-white/70">{label}</span>
+    <div className="flex flex-col items-center rounded-2xl border border-brand/10 bg-white px-6 py-4 shadow-inner shadow-brand/5">
+      <span className="text-3xl font-semibold text-brand">{value}</span>
+      <span className="mt-1 text-xs tracking-[0.2em] text-brand/60">{label}</span>
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

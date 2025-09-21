@@ -1,7 +1,7 @@
 "use client"
 
-import { useSearchParams, useParams } from "next/navigation"
 import Link from "next/link"
+import { useParams, useSearchParams } from "next/navigation"
 
 export default function OrderSuccessPage() {
   const { id } = useParams()
@@ -9,23 +9,42 @@ export default function OrderSuccessPage() {
   const txn = searchParams.get("txn")
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
-      <div className="bg-white p-8 rounded-lg shadow max-w-md w-full text-center">
-        <h1 className="text-2xl font-bold text-emerald-600">🎉 Order Confirmed!</h1>
-        <p className="mt-3 text-gray-700">Thank you for your purchase.</p>
-        <p className="mt-1 text-sm text-gray-500">Your order ID is <span className="font-medium">{id}</span></p>
+    <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4 py-16">
+      <div className="w-full max-w-md rounded-2xl border border-gray-100 bg-white p-8 text-center shadow-sm">
+        <h1 className="text-2xl font-semibold text-emerald-600">Order confirmed</h1>
+        <p className="mt-3 text-sm text-gray-600">
+          Thank you for choosing Megora. We&apos;ve shared your order details over email.
+        </p>
+        <p className="mt-4 text-sm text-gray-800">
+          Order ID: <span className="font-mono font-semibold text-gray-900">{id}</span>
+        </p>
         {txn && (
-          <p className="mt-1 text-sm text-gray-500">
-            Transaction ID: <span className="font-medium">{txn}</span>
+          <p className="mt-1 text-xs text-gray-500">
+            Transaction reference: <span className="font-mono">{txn}</span>
           </p>
         )}
-        <Link
-          href="/"
-          className="mt-6 inline-block bg-brand text-white px-6 py-2 rounded-lg hover:bg-brand-dark transition"
-        >
-          Continue Shopping
-        </Link>
+        <div className="mt-6 flex flex-col gap-3">
+          <Link
+            href={`/orders/${id}`}
+            className="inline-flex items-center justify-center rounded-full border border-brand/20 px-6 py-3 text-sm font-semibold text-brand transition hover:bg-brand/10"
+          >
+            View order status
+          </Link>
+          <Link
+            href={`/orders/${id}/invoice`}
+            className="inline-flex items-center justify-center rounded-full border border-gray-200 px-6 py-3 text-sm font-semibold text-gray-600 transition hover:border-brand/40 hover:text-brand"
+          >
+            Download invoice
+          </Link>
+          <Link
+            href="/products"
+            className="inline-flex items-center justify-center rounded-full bg-brand px-6 py-3 text-sm font-semibold text-white shadow transition hover:bg-brand/90"
+          >
+            Continue shopping
+          </Link>
+        </div>
       </div>
     </div>
   )
 }
+

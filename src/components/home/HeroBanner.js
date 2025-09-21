@@ -1,25 +1,12 @@
-﻿"use client"
+"use client"
 
 import Image from "next/image"
 import Link from "next/link"
-import { ShoppingBagIcon, SparklesIcon, ShieldCheckIcon, TruckIcon } from "@heroicons/react/24/outline"
-
-const heroHighlights = [
-  {
-    title: "Hallmarked metals",
-    description: "Certified purity with skin-safe plating for daily luxe.",
-    icon: ShieldCheckIcon,
-  },
-  {
-    title: "48 hr dispatch",
-    description: "Packed by artisans and shipped securely across India.",
-    icon: TruckIcon,
-  },
-]
+import { ShoppingBagIcon, SparklesIcon } from "@heroicons/react/24/outline"
 
 export default function HeroBanner() {
   return (
-    <section className="relative min-h-[600px] w-full overflow-hidden bg-brand-light">
+    <section className="relative min-h-[760px] w-full overflow-hidden bg-brand-light">
       <div className="absolute inset-0 overflow-hidden">
         <Image
           src="/loginBanner.png"
@@ -32,7 +19,7 @@ export default function HeroBanner() {
         <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black via-black/35 to-transparent" />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-[600px] max-w-7xl flex-col justify-between px-4 pb-16 pt-20 text-white md:flex-row md:items-end">
+      <div className="relative z-10 mx-auto flex min-h-[760px] max-w-7xl flex-col justify-end gap-10 px-4 pb-16 pt-24 text-white md:flex-row md:items-end md:justify-between">
         <div className="max-w-xl space-y-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em]">
             Megora Atelier
@@ -61,29 +48,6 @@ export default function HeroBanner() {
               Explore necklaces
             </Link>
           </div>
-          <p className="text-xs uppercase tracking-[0.3em] text-white/70">
-            Email: <span className="font-semibold text-white">megorajewels@gmail.com</span> • WhatsApp: <span className="font-semibold text-white">+91 77361 66728</span>
-          </p>
-        </div>
-
-        <div className="mt-10 flex w-full flex-col gap-4 md:mt-0 md:w-[360px]">
-          {heroHighlights.map((item) => {
-            const Icon = item.icon
-            return (
-              <div
-                key={item.title}
-                className="flex items-start gap-3 rounded-3xl border border-white/20 bg-white/10 p-4 backdrop-blur"
-              >
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/20">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <div className="space-y-1 text-sm text-white/85">
-                  <p className="font-semibold text-white">{item.title}</p>
-                  <p>{item.description}</p>
-                </div>
-              </div>
-            )
-          })}
         </div>
       </div>
 
@@ -104,3 +68,4 @@ export default function HeroBanner() {
     </section>
   )
 }
+

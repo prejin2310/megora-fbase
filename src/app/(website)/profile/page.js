@@ -1,51 +1,132 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
+import { useRouter } from "next/navigation"
 import {
   ArrowRightIcon,
-  EnvelopeIcon,
-  GiftIcon,
   HeartIcon,
+  KeyIcon,
   MapPinIcon,
   ShoppingBagIcon,
-  SparklesIcon,
+  TruckIcon,
   UserCircleIcon,
 } from "@heroicons/react/24/outline"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/context/AuthContext"
+import { collection, getDocs, limit, orderBy, query, where } from "firebase/firestore"
 
-const quickActions = [
+import { useAuth } from "@/context/AuthContext"
+import { useCart } from "@/context/CartContext"
+import { useWishlist } from "@/context/WishlistContext"
+import { db } from "@/lib/firebase"
+import { inr } from "@/lib/utils"
+
+const dashboardLinks = [
   {
-    name: "Orders",
-    href: "/orders",
-    description: "Track purchases, download invoices, and manage returns.",
+    title: "Account details",
+    description: "Update your name and contact preferences in seconds.",
+    href: "/profile/account",
+    icon: UserCircleIcon,
+  },
+  {
+    title: "Password & security",
+    description: "Send a password reset and keep your account safe.",
+    href: "/profile/password",
+    icon: KeyIcon,
+  },
+  {
+    title: "Orders & tracking",
+    description: "Monitor current parcels and download invoices.",
+    href: "/profile/orders",
+    icon: TruckIcon,
+  },
+  {
+    title: "Purchase history",
+    description: "Browse every jewel you have added to your trove.",
+    href: "/profile/history",
     icon: ShoppingBagIcon,
   },
   {
-    name: "Wishlist",
-    href: "/wishlist",
-    description: "Revisit the pieces you loved and add them to your cart.",
+    title: "Wishlist & cart",
+    description: "Review favourites and pieces waiting in your bag.",
+    href: "/profile/wishlist",
     icon: HeartIcon,
   },
   {
-    name: "Rewards",
-    href: "/profile/rewards",
-    description: "Unlock exclusive perks crafted for our loyal patrons.",
-    icon: GiftIcon,
+    title: "Saved addresses",
+    description: "Store delivery addresses for faster checkout.",
+    href: "/profile/addresses",
+    icon: MapPinIcon,
   },
 ]
 
+const formatName = (value = "") => {
+  if (!value) return "Guest"
+  return value
+    .replace(/[._-]/g, " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(" ")
+}
+
 export default function ProfilePage() {
-  const { user = null, initializing = true } = useAuth() || {} // ✅ safe fallback
+  const { user = null, initializing = true } = useAuth() || {}
   const router = useRouter()
+  const { cart = [] } = useCart() || {}
+  const { wishlist = [] } = useWishlist() || {}
+
+  const [recentOrders, setRecentOrders] = useState([])
+  const [ordersLoading, setOrdersLoading] = useState(true)
 
   useEffect(() => {
     if (!initializing && !user) {
       router.replace("/login?redirect=/profile")
     }
   }, [initializing, user, router])
+
+  useEffect(() => {
+    const fetchRecentOrders = async () => {
+      if (!user?.uid) {
+        setRecentOrders([])
+        setOrdersLoading(false)
+        return
+      }
+
+      try {
+        setOrdersLoading(true)
+        const ordersRef = collection(db, "orders")
+        const ordersQuery = query(
+          ordersRef,
+          where("userId", "==", user.uid),
+          orderBy("createdAt", "desc"),
+          limit(5)
+        )
+        const snapshot = await getDocs(ordersQuery)
+        const orders = snapshot.docs.map((doc) => {
+          const data = doc.data()
+          const createdAt = data.createdAt?.toDate?.() || null
+          return {
+            id: doc.id,
+            orderNumber: data.orderNumber,
+            total: data.charges?.total ?? data.total ?? 0,
+            status: data.status || data.payment?.status || "processing",
+            createdAt,
+            eta: data.delivery?.estimateWindow || data.delivery?.eta || null,
+          }
+        })
+        setRecentOrders(orders)
+      } catch (error) {
+        console.error("profile:orders", error)
+        setRecentOrders([])
+      } finally {
+        setOrdersLoading(false)
+      }
+    }
+
+    if (!initializing) {
+      fetchRecentOrders()
+    }
+  }, [initializing, user?.uid])
 
   const joinDate = useMemo(() => {
     if (!user?.metadata?.creationTime) return null
@@ -57,186 +138,136 @@ export default function ProfilePage() {
     })
   }, [user])
 
-  if (initializing) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-brand-light via-white to-white flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3 text-brand">
-          <div className="h-12 w-12 rounded-full border-2 border-brand/30 border-t-transparent animate-spin" aria-hidden="true" />
-          <p className="text-sm uppercase tracking-[0.3em] text-brand/70">Preparing your suite</p>
-        </div>
-      </div>
-    )
-  }
+  const displayName = useMemo(() => {
+    if (user?.displayName) return user.displayName
+    if (user?.email) return formatName(user.email.split("@")[0])
+    return "Guest"
+  }, [user?.displayName, user?.email])
 
-  if (!user) {
+  if (initializing || !user) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-brand-light via-white to-white flex items-center justify-center">
-        <p className="text-sm text-brand/80">Redirecting you to a secure login&hellip;</p>
+      <div className="min-h-screen bg-neutral-50 pt-28">
+        <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
+          <div className="rounded-3xl bg-white/90 px-6 py-10 shadow-sm">
+            <p className="text-sm text-gray-500">Preparing your profile</p>
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-brand-light via-white to-white pb-16">
-      <section className="relative isolate overflow-hidden bg-brand text-white">
-        <div className="absolute -top-24 right-0 h-64 w-64 rounded-full bg-emerald-500/30 blur-3xl" aria-hidden="true" />
-        <div className="absolute bottom-[-6rem] left-[-4rem] h-72 w-72 rounded-full bg-amber-300/20 blur-3xl" aria-hidden="true" />
-        <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-16 sm:px-10 lg:flex-row lg:items-center lg:gap-16">
-          <div className="relative flex items-center justify-center">
-            <div className="relative h-32 w-32 overflow-hidden rounded-full border-4 border-white/20 shadow-2xl shadow-black/20">
-              {user.photoURL ? (
-                <Image
-                  src={user.photoURL}
-                  alt={user.displayName || user.email || "Profile"}
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-white/10">
-                  <UserCircleIcon className="h-20 w-20 text-white/70" />
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="flex-1 space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-xs tracking-[0.35em] uppercase">
-              <SparklesIcon className="h-4 w-4" />
-              Inner Circle Member
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-playfair font-semibold">Welcome back, {user.displayName || user.email?.split("@")[0] || "Connoisseur"}</h1>
-            <p className="max-w-xl text-sm md:text-base text-white/80">
-              Your personal atelier for handcrafted elegance. Discover tailored recommendations, manage your collections, and stay ahead of exclusive drops curated for you.
-            </p>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-white/70">
-              {user.email && (
-                <span className="inline-flex items-center gap-2">
-                  <EnvelopeIcon className="h-4 w-4" />
-                  {user.email}
-                </span>
-              )}
-              {joinDate && (
-                <span className="inline-flex items-center gap-2">
-                  <SparklesIcon className="h-4 w-4" />
-                  Member since {joinDate}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto -mt-20 max-w-6xl px-6 sm:px-10">
-        <div className="grid gap-6 md:grid-cols-3">
-          <div className="rounded-3xl bg-white/90 p-6 shadow-xl shadow-brand/5 backdrop-blur">
-            <p className="text-xs uppercase tracking-[0.3em] text-brand/60">Order Spotlight</p>
-            <p className="mt-4 text-3xl font-semibold text-brand">04</p>
-            <p className="mt-2 text-sm text-gray-600">Orders in progress</p>
-            <Link href="/orders" className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-brand hover:text-brand/80">
-              Manage orders
+    <div className="min-h-screen bg-neutral-50 pb-16 pt-28">
+      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
+        <section className="rounded-3xl bg-white px-6 py-8 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-emerald-600">Your profile</p>
+          <h1 className="mt-3 text-3xl font-semibold text-gray-900">Hi {displayName}, welcome back</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Add your full name so we can personalise every invoice and delivery experience.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link
+              href="/profile/account"
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500"
+            >
+              Update your name
               <ArrowRightIcon className="h-4 w-4" />
             </Link>
-          </div>
-          <div className="rounded-3xl bg-white/90 p-6 shadow-xl shadow-brand/5 backdrop-blur">
-            <p className="text-xs uppercase tracking-[0.3em] text-brand/60">Wishlist</p>
-            <p className="mt-4 text-3xl font-semibold text-brand">12</p>
-            <p className="mt-2 text-sm text-gray-600">Pieces awaiting your signature</p>
-            <Link href="/wishlist" className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-brand hover:text-brand/80">
-              View wishlist
-              <ArrowRightIcon className="h-4 w-4" />
+            <Link
+              href="/profile/orders"
+              className="inline-flex items-center gap-2 rounded-full border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-emerald-200 hover:text-emerald-700"
+            >
+              View recent orders
             </Link>
           </div>
-          <div className="rounded-3xl bg-gradient-to-br from-brand to-emerald-800 p-6 text-white shadow-xl shadow-brand/20">
-            <p className="text-xs uppercase tracking-[0.3em] text-white/70">Loyalty</p>
-            <p className="mt-4 text-3xl font-semibold">1,240</p>
-            <p className="mt-2 text-sm text-white/80">Royalty points available</p>
-            <Link href="/profile/rewards" className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-white hover:text-amber-100">
-              Redeem rewards
-              <ArrowRightIcon className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto mt-14 max-w-6xl space-y-10 px-6 sm:px-10">
-        <div className="rounded-3xl bg-white/90 p-8 shadow-lg shadow-brand/5 backdrop-blur">
-          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold text-brand">Personal dossier</h2>
-              <p className="mt-2 text-sm text-gray-600">Edit your personal details, communications, and social handles.</p>
+          <dl className="mt-6 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-2xl bg-gray-50 px-4 py-3">
+              <dt className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-500">Member since</dt>
+              <dd className="mt-1 text-sm text-gray-800">{joinDate || ""}</dd>
             </div>
-            <Link href="/profile/settings" className="inline-flex items-center gap-2 rounded-full border border-brand/20 px-4 py-2 text-sm font-medium text-brand hover:bg-brand/5">
-              Refine details
-              <ArrowRightIcon className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <dl className="mt-8 grid gap-6 sm:grid-cols-2">
-            <div className="rounded-2xl border border-brand/10 p-5">
-              <dt className="text-xs uppercase tracking-[0.3em] text-brand/60">Primary email</dt>
-              <dd className="mt-3 flex items-center gap-2 text-sm text-gray-800">
-                <EnvelopeIcon className="h-4 w-4 text-brand" />
-                {user.email || "Not set"}
-              </dd>
+            <div className="rounded-2xl bg-gray-50 px-4 py-3">
+              <dt className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-500">Wishlist</dt>
+              <dd className="mt-1 text-sm text-gray-800">{wishlist.length} item{wishlist.length === 1 ? "" : "s"}</dd>
             </div>
-            <div className="rounded-2xl border border-brand/10 p-5">
-              <dt className="text-xs uppercase tracking-[0.3em] text-brand/60">Preferred phone</dt>
-              <dd className="mt-3 flex items-center gap-2 text-sm text-gray-400">
-                <span className="italic">Add your number to receive shipping alerts</span>
-              </dd>
-            </div>
-            <div className="rounded-2xl border border-brand/10 p-5 sm:col-span-2">
-              <dt className="text-xs uppercase tracking-[0.3em] text-brand/60">Signature address</dt>
-              <dd className="mt-3 flex items-center gap-3 text-sm text-gray-400">
-                <MapPinIcon className="h-5 w-5 text-brand/60" />
-                Elevate your experience by saving a preferred delivery address.
-              </dd>
+            <div className="rounded-2xl bg-gray-50 px-4 py-3">
+              <dt className="text-xs font-semibold uppercase tracking-[0.3em] text-gray-500">Cart</dt>
+              <dd className="mt-1 text-sm text-gray-800">{cart.length} item{cart.length === 1 ? "" : "s"}</dd>
             </div>
           </dl>
-        </div>
+        </section>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-3xl bg-white/90 p-8 shadow-lg shadow-brand/5 backdrop-blur">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-brand">Curated shortcuts</h2>
-              <SparklesIcon className="h-6 w-6 text-brand/60" />
-            </div>
-            <p className="mt-3 text-sm text-gray-600">Handy links to keep your journey effortless.</p>
-            <div className="mt-6 space-y-4">
-              {quickActions.map((action) => (
-                <Link
-                  key={action.name}
-                  href={action.href}
-                  className="group flex items-start gap-4 rounded-2xl border border-brand/10 bg-white/70 p-5 transition hover:border-brand/40 hover:bg-white"
-                >
-                  <action.icon className="mt-1 h-6 w-6 text-brand group-hover:text-brand/80" />
-                  <div>
-                    <p className="text-sm font-semibold text-brand">{action.name}</p>
-                    <p className="mt-1 text-xs text-gray-600">{action.description}</p>
-                  </div>
-                  <ArrowRightIcon className="ml-auto h-4 w-4 text-brand/40 group-hover:text-brand" />
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-3xl bg-brand text-white p-8 shadow-xl shadow-brand/20">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.35em]">
-              Exclusive
-            </div>
-            <h2 className="mt-4 text-2xl font-playfair font-semibold">Private styling invitation</h2>
-            <p className="mt-3 text-sm text-white/80">
-              Enjoy a complimentary styling session with our in-house curator. Discover bespoke combinations and bespoke engravings tailored to your aura.
-            </p>
-            <button
-              type="button"
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-medium text-brand hover:bg-amber-100"
+        <section className="mt-10 grid gap-4 sm:grid-cols-2">
+          {dashboardLinks.map((link) => (
+            <Link
+              key={link.title}
+              href={link.href}
+              className="group flex h-full items-start gap-4 rounded-3xl border border-gray-200 bg-white px-5 py-4 shadow-sm transition hover:-translate-y-1 hover:border-emerald-200"
             >
-              Reserve your slot
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <link.icon className="h-5 w-5" />
+              </span>
+              <div className="flex flex-1 flex-col">
+                <p className="text-sm font-semibold text-gray-900">{link.title}</p>
+                <p className="mt-1 text-xs text-gray-600">{link.description}</p>
+                <span className="mt-3 inline-flex items-center text-xs font-semibold uppercase tracking-[0.25em] text-emerald-600 opacity-0 transition group-hover:opacity-100">
+                  Manage <ArrowRightIcon className="ml-2 h-3 w-3" />
+                </span>
+              </div>
+            </Link>
+          ))}
+        </section>
+
+        <section className="mt-12">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold text-gray-900">Recent activity</h2>
+            <Link
+              href="/orders"
+              className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 hover:text-emerald-600"
+            >
+              See all orders
               <ArrowRightIcon className="h-4 w-4" />
-            </button>
+            </Link>
           </div>
-        </div>
-      </section>
+          <div className="mt-4 rounded-3xl border border-gray-200 bg-white px-4 py-5 shadow-sm">
+            {ordersLoading ? (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, index) => (
+                  <div key={index} className="h-12 animate-pulse rounded-xl bg-gray-100" />
+                ))}
+              </div>
+            ) : recentOrders.length === 0 ? (
+              <p className="text-sm text-gray-600">We will list your orders here once you place one.</p>
+            ) : (
+              <ul className="divide-y divide-gray-100">
+                {recentOrders.map((order) => (
+                  <li key={order.id} className="flex flex-col gap-2 py-4 text-sm text-gray-700 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">Order #{order.orderNumber || order.id}</p>
+                      <p className="text-xs text-gray-500">
+                        {order.createdAt ? order.createdAt.toLocaleString(undefined, { day: "2-digit", month: "short", year: "numeric" }) : "Processing"}
+                        {order.eta ? `  ETA ${order.eta}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold capitalize text-emerald-700">
+                        {order.status.replace(/_/g, " ")}
+                      </span>
+                      <span className="text-sm font-semibold text-gray-900">{inr(order.total)}</span>
+                      <Link
+                        href={`/orders/${order.id}`}
+                        className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.25em] text-emerald-600 hover:text-emerald-500"
+                      >
+                        View
+                        <ArrowRightIcon className="h-3 w-3" />
+                      </Link>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+      </div>
     </div>
   )
 }

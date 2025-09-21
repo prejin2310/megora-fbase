@@ -3,7 +3,7 @@ import CheckoutContent from "./CheckoutContent"
 
 export default function CheckoutPage() {
   return (
-    <Suspense fallback={<div className="p-6">Loading checkout…</div>}>
+    <Suspense fallback={<div className="p-6">Loading checkout...</div>}>
       <CheckoutContent />
     </Suspense>
   )
