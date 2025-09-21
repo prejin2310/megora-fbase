@@ -1,113 +1,120 @@
-"use client"
+﻿"use client"
+
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Facebook, Instagram, Twitter, Youtube } from "lucide-react"
-import { useState, useEffect } from "react"
+import { EnvelopeIcon, PhoneIcon, MapPinIcon } from "@heroicons/react/24/outline"
+
+const quickLinks = [
+  { label: "Shop all", href: "/products" },
+  { label: "New arrivals", href: "/#new-arrivals" },
+  { label: "Necklaces", href: "/category/necklaces" },
+  { label: "Rings", href: "/category/rings" },
+]
+
+const supportLinks = [
+  { label: "Track orders", href: "/orders" },
+  { label: "Returns & care", href: "/return-policy" },
+  { label: "Wishlist", href: "/wishlist" },
+  { label: "Cart", href: "/cart" },
+]
 
 export default function Footer() {
-  const [year, setYear] = useState("")
+  const [year, setYear] = useState(new Date().getFullYear())
 
   useEffect(() => {
     setYear(new Date().getFullYear())
   }, [])
 
   return (
-    <footer className="relative bg-brand text-brand-light">
-      {/* Background pattern overlay */}
-      <div className="absolute inset-0 opacity-10">
+    <footer className="relative overflow-hidden bg-brand text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.12),_transparent_60%)]" />
+      <div className="absolute inset-0 opacity-15">
         <Image src="/wPattern.svg" alt="pattern" fill className="object-cover" />
       </div>
-
-      <div className="relative max-w-7xl mx-auto px-6 py-16 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
-          {/* Logo & Brand */}
-          <div>
-            <div className="flex items-center gap-x-2">
-              <Image
-                src="/logo.png"
-                alt="Megora Jewels"
-                width={50}
-                height={50}
-                className="rounded bg-white"
-              />
-              <span className="text-2xl font-cormorant font-bold text-white">
-                Megora Jewels
-              </span>
-            </div>
-            <p className="mt-4 text-sm leading-relaxed">
-              Handcrafted elegance for every occasion — timeless beauty,
-              delivered with care.
+      <div className="relative mx-auto max-w-7xl px-4 py-16">
+        <div className="grid gap-12 lg:grid-cols-[1.2fr_1fr_1fr_1.1fr]">
+          <div className="space-y-6">
+            <Link href="/" className="flex items-center gap-3">
+              <Image src="/logoLan.png" alt="Megora Jewels" width={140} height={60} className="object-contain" />
+            </Link>
+            <p className="text-sm text-white/70">
+              Megora Jewels curates limited-edition jewelry for modern icons. Hypoallergenic, hallmarked, and delivered with concierge-level service from Kerala to the world.
             </p>
+            <div className="flex items-center gap-3 text-sm text-white/70">
+              <MapPinIcon className="h-5 w-5" />
+              <span>Heera Bluebells, Vellayambalam, Trivandrum, Kerala</span>
+            </div>
           </div>
 
-          {/* Quick Links */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-white">Quick Links</h3>
-            <ul className="space-y-3 text-sm">
-              <li><Link href="/products" className="hover:underline">Shop All</Link></li>
-              <li><Link href="/category/rings" className="hover:underline">Rings</Link></li>
-              <li><Link href="/category/necklaces" className="hover:underline">Necklaces</Link></li>
-              <li><Link href="/wishlist" className="hover:underline">Wishlist</Link></li>
-              <li><Link href="/cart" className="hover:underline">Cart</Link></li>
-            </ul>
-          </div>
+          <FooterColumn heading="Browse" links={quickLinks} />
+          <FooterColumn heading="Support" links={supportLinks} />
 
-          {/* Customer Service */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-white">Customer Service</h3>
-            <ul className="space-y-3 text-sm">
-              <li><Link href="/orders" className="hover:underline">My Orders</Link></li>
-              <li><Link href="/checkout" className="hover:underline">Checkout</Link></li>
-              <li><Link href="/profile" className="hover:underline">Account</Link></li>
-              <li><a href="mailto:megorajewels@gmail.com" className="hover:underline">Contact Us</a></li>
-              <li><Link href="/return-policy" className="hover:underline">Returns & Refunds</Link></li>
-            </ul>
-          </div>
-
-          {/* Newsletter & Social */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-white">Stay Connected</h3>
-            <form className="flex items-center bg-white rounded-md overflow-hidden">
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold text-white">Stay in touch</h3>
+            <p className="text-sm text-white/70">
+              Join the atelier list for early access to drops, styling notes, and private previews.
+            </p>
+            <form className="flex w-full items-center overflow-hidden rounded-full border border-white/20 bg-white/10 backdrop-blur-sm">
               <input
                 type="email"
-                placeholder="Your email"
-                className="flex-1 px-3 py-2 text-sm text-gray-700 outline-none"
+                name="newsletter"
+                placeholder="Enter your email"
+                className="flex-1 bg-transparent px-4 py-2 text-sm text-white placeholder:text-white/60 focus:outline-none"
               />
               <button
                 type="submit"
-                className="bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark transition"
+                className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-brand transition hover:bg-brand/10 hover:text-white"
               >
-                Subscribe
+                Join
               </button>
             </form>
-            <div className="flex space-x-4 mt-6">
-              <a href="#" aria-label="Instagram" className="hover:text-white"><Instagram className="w-5 h-5" /></a>
-              <a href="#" aria-label="Facebook" className="hover:text-white"><Facebook className="w-5 h-5" /></a>
-              <a href="#" aria-label="Twitter" className="hover:text-white"><Twitter className="w-5 h-5" /></a>
-              <a href="#" aria-label="YouTube" className="hover:text-white"><Youtube className="w-5 h-5" /></a>
+            <div className="space-y-3 text-sm text-white/70">
+              <a href="mailto:care@megora.in" className="flex items-center gap-2 hover:text-white">
+                <EnvelopeIcon className="h-5 w-5" />
+                care@megora.in
+              </a>
+              <a href="tel:+919876543210" className="flex items-center gap-2 hover:text-white">
+                <PhoneIcon className="h-5 w-5" />
+                +91 98765 43210
+              </a>
             </div>
           </div>
         </div>
 
-        {/* Bottom bar */}
-        <div className="border-t border-brand-light/30 mt-10 pt-6 text-sm flex flex-col md:flex-row justify-between items-center gap-2">
-          <p>© {year} Megora Jewels. All rights reserved.</p>
-          <p>Heera Bluebells, Vellayambalam, Trivandrum, Kerala</p>
-        </div>
-
-        {/* Developer credit */}
-        <div className="mt-4 text-xs text-center text-brand-light">
-          Developed & maintained by{" "}
-          <a
-            href="https://instagram.com/pr.folio"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-white"
-          >
-            Pr Folio
-          </a>
+        <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-white/60 md:flex-row md:items-center md:justify-between">
+          <p>Copyright {year} Megora Jewels. Crafted with patience in India.</p>
+          <p>
+            Developed by{' '}
+            <a
+              href="https://instagram.com/pr.folio"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-white hover:underline"
+            >
+              PR Folio
+            </a>
+          </p>
         </div>
       </div>
     </footer>
   )
 }
+
+function FooterColumn({ heading, links }) {
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-white">{heading}</h3>
+      <ul className="space-y-3 text-sm text-white/70">
+        {links?.map((link) => (
+          <li key={link.href}>
+            <Link href={link.href} className="transition hover:text-white">
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+

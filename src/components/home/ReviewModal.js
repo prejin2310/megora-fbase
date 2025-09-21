@@ -1,4 +1,4 @@
-// src/components/home/ReviewModal.js
+﻿// src/components/home/ReviewModal.js
 "use client"
 
 import { Dialog } from "@headlessui/react"
@@ -34,7 +34,7 @@ export default function ReviewModal({ review, onClose }) {
 
         {/* Order details */}
         <p className="text-xs text-gray-500 mb-2">
-          Order: {review.orderId} • Date: {review.date}
+          Order: {review.orderId} â€¢ Date: {review.date}
         </p>
 
         {/* Text */}
@@ -59,3 +59,6 @@ export default function ReviewModal({ review, onClose }) {
     </Dialog>
   )
 }
+
+
+

@@ -1,75 +1,106 @@
-"use client"
+﻿"use client"
 
 import Image from "next/image"
 import Link from "next/link"
-import { motion } from "framer-motion"
-import { ShoppingBagIcon, SparklesIcon } from "@heroicons/react/24/outline"
+import { ShoppingBagIcon, SparklesIcon, ShieldCheckIcon, TruckIcon } from "@heroicons/react/24/outline"
+
+const heroHighlights = [
+  {
+    title: "Hallmarked metals",
+    description: "Certified purity with skin-safe plating for daily luxe.",
+    icon: ShieldCheckIcon,
+  },
+  {
+    title: "48 hr dispatch",
+    description: "Packed by artisans and shipped securely across India.",
+    icon: TruckIcon,
+  },
+]
 
 export default function HeroBanner() {
   return (
-    <section className="relative h-[85vh] md:h-screen w-full overflow-hidden">
-      {/* Background Image with fixed scroll + zoom animation */}
-      <div className="absolute inset-0 -z-10">
-        <motion.div
-          initial={{ scale: 1 }}
-          animate={{ scale: 1.1 }}
-          transition={{ duration: 20, ease: "easeOut" }}
-          className="absolute inset-0 !fixed"
-        >
-          <Image
-            src="/loginBanner.png" // 🔥 replace with your banner image
-            alt="Megora Jewels Hero"
-            fill
-            priority
-            className="object-cover object-center"
-          />
-        </motion.div>
-
-        {/* Premium Overlays */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-cream/20" />
-        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/60 to-transparent" />
+    <section className="relative min-h-[600px] w-full overflow-hidden bg-brand-light">
+      <div className="absolute inset-0 overflow-hidden">
+        <Image
+          src="/loginBanner.png"
+          alt="Megora Jewels hero"
+          fill
+          priority
+          className="hero-banner-image object-cover"
+        />
+        <div className="absolute inset-0 bg-black/45" />
+        <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black via-black/35 to-transparent" />
       </div>
 
-      {/* Content at bottom-left */}
-      <div className="relative flex h-full items-end justify-start px-6 md:px-16 pb-12 md:pb-20">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
-          className="max-w-xl space-y-4 text-left"
-        >
-          {/* Title */}
-          <h1 className="font-playfair text-2xl sm:text-4xl md:text-5xl font-bold text-white leading-snug drop-shadow-lg">
-            Born to Shine.<br />
-            Adored by Generations.
-          </h1>
-
-          {/* Description */}
-          <p className="text-sm sm:text-base md:text-lg text-white/90 leading-relaxed">
-            Crafted to reflect your elegance.  
-            Our timeless designs inspire every moment.  
-            <strong> Be ready for what’s next!</strong>
-          </p>
-
-          {/* Buttons */}
-          <div className="pt-5 flex flex-col sm:flex-row gap-4">
+      <div className="relative z-10 mx-auto flex min-h-[600px] max-w-7xl flex-col justify-between px-4 pb-16 pt-20 text-white md:flex-row md:items-end">
+        <div className="max-w-xl space-y-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em]">
+            Megora Atelier
+          </div>
+          <div className="space-y-4">
+            <h1 className="font-playfair text-4xl leading-tight sm:text-5xl md:text-[52px]">
+              Heirloom-worthy jewels for every moment.
+            </h1>
+            <p className="text-sm text-white/85 sm:text-base">
+              Discover anti-tarnish silhouettes, handset stones, and concierge-level styling. Each limited drop is photographed in natural light so you receive exactly what you fall in love with online.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
             <Link
               href="/products"
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-white px-6 py-2.5 text-sm font-semibold text-gray-900 transition hover:bg-gray-200"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-brand transition hover:bg-brand-light/90"
             >
-              <ShoppingBagIcon className="w-5 h-5" />
-              Shop Now
+              <ShoppingBagIcon className="h-5 w-5" />
+              Shop the collection
             </Link>
             <Link
-              href="/category/anti-tarnish"
-              className="inline-flex items-center justify-center gap-2 rounded-md border-2 border-white px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-white hover:text-gray-900"
+              href="/category/necklaces"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/60 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
             >
-              <SparklesIcon className="w-5 h-5" />
-              Explore Anti Tarnish
+              <SparklesIcon className="h-5 w-5" />
+              Explore necklaces
             </Link>
           </div>
-        </motion.div>
+          <p className="text-xs uppercase tracking-[0.3em] text-white/70">
+            Email: <span className="font-semibold text-white">megorajewels@gmail.com</span> • WhatsApp: <span className="font-semibold text-white">+91 77361 66728</span>
+          </p>
+        </div>
+
+        <div className="mt-10 flex w-full flex-col gap-4 md:mt-0 md:w-[360px]">
+          {heroHighlights.map((item) => {
+            const Icon = item.icon
+            return (
+              <div
+                key={item.title}
+                className="flex items-start gap-3 rounded-3xl border border-white/20 bg-white/10 p-4 backdrop-blur"
+              >
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/20">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <div className="space-y-1 text-sm text-white/85">
+                  <p className="font-semibold text-white">{item.title}</p>
+                  <p>{item.description}</p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </div>
+
+      <style jsx>{`
+        @keyframes heroZoom {
+          0% {
+            transform: scale(1);
+          }
+          100% {
+            transform: scale(1.08);
+          }
+        }
+
+        .hero-banner-image {
+          animation: heroZoom 18s ease-in-out infinite alternate;
+        }
+      `}</style>
     </section>
   )
 }

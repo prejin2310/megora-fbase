@@ -1,27 +1,47 @@
-import Categories from "@/components/home/Categories"
-import DealOfTheDay from "@/components/home/NecklacesSection"
+﻿"use client"
+
+import { useEffect, useState } from "react"
+
 import HeroBanner from "@/components/home/HeroBanner"
 import NewArrivals from "@/components/home/NewArrivals"
-import Reviews from "@/components/home/Reviews"
-import Navbar from "@/components/layout/Navbar"
 import NecklacesSection from "@/components/home/NecklacesSection"
-import CategorySection from "@/components/sections/CategorySection"
+import DealOfDay from "@/components/home/DealOfDay"
+import FeatureHighlights from "@/components/home/FeatureHighlights"
+import VideoSpotlight from "@/components/home/VideoSpotlight"
+import Categories from "@/components/home/Categories"
+import Reviews from "@/components/home/Reviews"
+
+const LOADER_DELAY = 650
 
 export default function HomePage() {
+  const [initializing, setInitializing] = useState(true)
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setInitializing(false), LOADER_DELAY)
+    return () => window.clearTimeout(timeout)
+  }, [])
+
+  if (initializing) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white/50 backdrop-blur-md">
+        <div className="flex flex-col items-center gap-4 text-brand">
+          <span className="inline-flex h-14 w-14 animate-spin items-center justify-center rounded-full border-4 border-brand/10 border-t-brand" />
+          <p className="text-sm uppercase tracking-[0.4em] text-brand/70">Megora</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <main>
-      <Navbar/>
+    <div className="bg-white text-gray-900">
       <HeroBanner />
       <NewArrivals />
-      {/* Necklaces */}
-      <CategorySection
-  categoryKey="myjO40rBsif5vugBhTS5"   // the Firestore id of category doc
-  title="Necklaces"
-  tagline="Discover our latest collection of premium necklaces."
-/>
-
-      <Categories/>
-      <Reviews/>
-    </main>
+      <NecklacesSection />
+      <DealOfDay />
+      <FeatureHighlights />
+      <VideoSpotlight />
+      <Categories />
+      <Reviews />
+    </div>
   )
 }
