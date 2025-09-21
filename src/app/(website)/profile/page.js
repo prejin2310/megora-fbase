@@ -38,7 +38,7 @@ const quickActions = [
 ]
 
 export default function ProfilePage() {
-  const { user, initializing } = useAuth()
+  const { user = null, initializing = true } = useAuth() || {} // ✅ safe fallback
   const router = useRouter()
 
   useEffect(() => {

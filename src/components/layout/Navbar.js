@@ -5,11 +5,6 @@ import {
   Dialog,
   DialogBackdrop,
   DialogPanel,
-  Tab,
-  TabGroup,
-  TabList,
-  TabPanel,
-  TabPanels,
 } from "@headlessui/react"
 import {
   Bars3Icon,
@@ -86,8 +81,10 @@ export default function Navbar() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
 
-  const { cart } = useCart()
-  const { wishlist } = useWishlist()
+  // ✅ Safe destructuring with fallback
+  const { cart = [] } = useCart() || {}
+  const { wishlist = [] } = useWishlist() || {}
+
   const auth = useAuth()
   const pathname = usePathname()
   const router = useRouter()
@@ -98,7 +95,8 @@ export default function Navbar() {
   const sanitizedQuery = query.trim()
   const hasQuery = sanitizedQuery.length >= 2
 
-  const escapeRegExp = (value) => value.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")
+  const escapeRegExp = (value) =>
+    value.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")
 
   const highlightMatch = (text = "") => {
     if (!hasQuery || !text) return text
@@ -251,7 +249,7 @@ export default function Navbar() {
       : "bg-brand/95 backdrop-blur-md shadow-lg"
 
   return (
-    <>
+        <>
       <Dialog open={searchOpen} onClose={closeSearch} className="relative z-[60]">
         <DialogBackdrop className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity data-[closed]:opacity-0" />
         <div className="fixed inset-0 overflow-y-auto px-4 py-10 sm:px-6 sm:py-16">
