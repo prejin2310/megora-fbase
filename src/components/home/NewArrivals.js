@@ -1,8 +1,8 @@
 ﻿"use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import Link from "next/link"
-import { Navigation } from "swiper/modules"
+import { Navigation, Autoplay } from "swiper/modules"
 import { Swiper, SwiperSlide } from "swiper/react"
 import "swiper/css"
 import "swiper/css/navigation"
@@ -21,6 +21,7 @@ const sliderBreakpoints = {
 export default function NewArrivals() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
+  const swiperRef = useRef(null)
 
   useEffect(() => {
     let mounted = true
@@ -47,6 +48,7 @@ export default function NewArrivals() {
       <div className="pointer-events-none absolute bottom-0 right-[-160px] h-80 w-80 rounded-full bg-emerald-500/20 blur-3xl" />
 
       <div className="relative mx-auto max-w-7xl space-y-10 px-4">
+        {/* Header */}
         <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="space-y-4 md:max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.4em] text-white/70">
@@ -67,6 +69,7 @@ export default function NewArrivals() {
           </Link>
         </div>
 
+        {/* Content */}
         {loading ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, index) => (
@@ -75,10 +78,19 @@ export default function NewArrivals() {
           </div>
         ) : products.length > 0 ? (
           <Swiper
-            modules={[Navigation]}
+            modules={[Navigation, Autoplay]}
             navigation
+            autoplay={{
+              delay: 3500,
+              disableOnInteraction: false,
+              pauseOnMouseEnter: true, // ✅ pause when hovered
+            }}
+            loop
             breakpoints={sliderBreakpoints}
             className="new-arrivals-swiper pb-10"
+            onBeforeInit={(swiper) => {
+              swiperRef.current = swiper
+            }}
           >
             {products.map((product) => (
               <SwiperSlide key={product.id} className="!h-auto">
@@ -95,6 +107,7 @@ export default function NewArrivals() {
         )}
       </div>
 
+      {/* Swiper button styles */}
       <style jsx global>{`
         .new-arrivals-swiper .swiper-button-next,
         .new-arrivals-swiper .swiper-button-prev {
@@ -135,4 +148,3 @@ function ProductSkeleton() {
     </div>
   )
 }
-
