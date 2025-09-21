@@ -16,7 +16,7 @@ import Link from "next/link";
 import Image from "next/image";
 import toast from "react-hot-toast";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 10;
 
 export default function ProductsListPage() {
   const [items, setItems] = useState([]);
