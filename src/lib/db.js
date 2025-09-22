@@ -11,6 +11,7 @@ import {
   limit,
   addDoc,
   updateDoc,
+  serverTimestamp,
 } from "firebase/firestore"
 
 //
@@ -72,7 +73,7 @@ export async function searchProducts(searchTerm) {
 }
 
 //
-// 🔹 Add new product (auto keywords)
+// 🔹 Add new product (auto keywords + serverTimestamp)
 //
 export async function addProduct(product) {
   const keywords = generateKeywords(
@@ -83,8 +84,8 @@ export async function addProduct(product) {
   return await addDoc(collection(db, "products"), {
     ...product,
     keywords,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   })
 }
 
@@ -97,7 +98,7 @@ export async function updateProduct(id, data) {
   await updateDoc(ref, {
     ...data,
     keywords,
-    updatedAt: new Date(),
+    updatedAt: serverTimestamp(),
   })
 }
 
@@ -191,7 +192,7 @@ export async function getFilteredProducts({ categoryId, priceRange, sort }) {
       results = results.filter((p) => p.categoryId === categoryId)
     }
 
-    // ✅ Price filter (only if user actually changes it)
+    // ✅ Price filter
     if (priceRange && priceRange.length === 2) {
       const [min, max] = priceRange
       if (min > 0 || max < 999999) {
@@ -209,17 +210,31 @@ export async function getFilteredProducts({ categoryId, priceRange, sort }) {
     } else if (sort === "newest") {
       results.sort((a, b) => b.createdAt - a.createdAt)
     } else {
-      // Default: keep as Firestore gave (newest first)
       results.sort((a, b) => b.createdAt - a.createdAt)
     }
-
-    console.log(
-      `Fetched ${results.length} products | sort=${sort} | category=${categoryId} | price=${priceRange}`
-    )
 
     return results
   } catch (error) {
     console.error("db:getFilteredProducts", error)
+    return []
+  }
+}
+
+//
+// 🔹 Get products by categoryId
+//
+export async function getProductsByCategory(categoryId, limitCount = 10) {
+  try {
+    const q = query(
+      collection(db, "products"),
+      where("categoryId", "==", categoryId), // ✅ use categoryId (matches Firestore schema)
+      orderBy("createdAt", "desc"),
+      limit(limitCount)
+    )
+    const snapshot = await getDocs(q)
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  } catch (error) {
+    console.error("db:getProductsByCategory", error)
     return []
   }
 }

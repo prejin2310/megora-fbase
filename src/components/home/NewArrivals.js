@@ -133,23 +133,25 @@ export default function NewArrivals() {
   )
 }
 
-
+//
+// ✅ Inline skeleton matches ProductCard exactly
+//
 function ProductSkeleton() {
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-brand/10 bg-white p-5">
-      {/* Image placeholder (match ProductCard image size) */}
+      {/* Image placeholder */}
       <div
         className="animate-pulse rounded-2xl bg-brand/10"
         style={{ aspectRatio: "4 / 5" }}
       />
       
-      {/* Text lines */}
+      {/* Title + subtitle */}
       <div className="mt-4 space-y-3">
         <div className="h-4 w-3/4 animate-pulse rounded-full bg-brand/20" />
         <div className="h-4 w-1/2 animate-pulse rounded-full bg-brand/20" />
       </div>
 
-      {/* Buttons / actions */}
+      {/* Action buttons */}
       <div className="mt-auto flex flex-col gap-3 pt-5">
         <div className="h-10 w-full animate-pulse rounded-full bg-brand/15" />
         <div className="h-10 w-full animate-pulse rounded-full bg-brand/15" />
@@ -157,5 +159,3 @@ function ProductSkeleton() {
     </div>
   )
 }
-
-

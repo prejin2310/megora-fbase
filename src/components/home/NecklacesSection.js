@@ -13,12 +13,11 @@ import ProductCard from "@/components/product/ProductCard"
 const CATEGORY_KEY = "necklaces"
 
 const sliderBreakpoints = {
-  0: { slidesPerView: 2, spaceBetween: 12 },   // ✅ fixed for mobile
+  0: { slidesPerView: 2, spaceBetween: 12 },   // ✅ 2 cards per row on mobile
   640: { slidesPerView: 3, spaceBetween: 16 },
   1024: { slidesPerView: 4, spaceBetween: 20 },
   1440: { slidesPerView: 5, spaceBetween: 24 },
 }
-
 
 export default function NecklacesSection() {
   const [products, setProducts] = useState([])
@@ -55,8 +54,11 @@ export default function NecklacesSection() {
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-[#FFF6EB] via-[#FFEEDC] to-[#FFF9F1] py-16">
+      {/* Decorative blur */}
       <div className="pointer-events-none absolute -right-32 top-16 h-72 w-72 rounded-full bg-[#F7D2B4]/60 blur-3xl" />
+
       <div className="relative mx-auto max-w-7xl space-y-10 px-4">
+        {/* Header */}
         <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="space-y-4 md:max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.35em] text-brand/70">
@@ -77,10 +79,11 @@ export default function NecklacesSection() {
           </Link>
         </div>
 
+        {/* Content */}
         {loading ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, index) => (
-              <CreamSkeleton key={index} />
+              <ProductSkeleton key={index} />
             ))}
           </div>
         ) : products.length > 0 ? (
@@ -105,6 +108,7 @@ export default function NecklacesSection() {
         )}
       </div>
 
+      {/* Swiper button styles */}
       <style jsx global>{`
         .necklaces-swiper .swiper-button-next,
         .necklaces-swiper .swiper-button-prev {
@@ -130,22 +134,25 @@ export default function NecklacesSection() {
   )
 }
 
+//
+// ✅ Inline skeleton that matches ProductCard
+//
 function ProductSkeleton() {
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-brand/10 bg-white p-5">
-      {/* Image placeholder (match ProductCard image size) */}
+      {/* Image placeholder */}
       <div
         className="animate-pulse rounded-2xl bg-brand/10"
         style={{ aspectRatio: "4 / 5" }}
       />
-      
-      {/* Text lines */}
+
+      {/* Title + subtitle */}
       <div className="mt-4 space-y-3">
         <div className="h-4 w-3/4 animate-pulse rounded-full bg-brand/20" />
         <div className="h-4 w-1/2 animate-pulse rounded-full bg-brand/20" />
       </div>
 
-      {/* Buttons / actions */}
+      {/* Action buttons */}
       <div className="mt-auto flex flex-col gap-3 pt-5">
         <div className="h-10 w-full animate-pulse rounded-full bg-brand/15" />
         <div className="h-10 w-full animate-pulse rounded-full bg-brand/15" />
