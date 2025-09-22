@@ -13,12 +13,12 @@ import ProductCard from "@/components/product/ProductCard"
 const CATEGORY_KEY = "necklaces"
 
 const sliderBreakpoints = {
-  0: { slidesPerView: 1.15, spaceBetween: 14 },
-  480: { slidesPerView: 2, spaceBetween: 16 },
-  768: { slidesPerView: 3, spaceBetween: 20 },
-  1024: { slidesPerView: 4, spaceBetween: 24 },
-  1440: { slidesPerView: 5, spaceBetween: 28 },
+  0: { slidesPerView: 2, spaceBetween: 12 },   // ✅ fixed for mobile
+  640: { slidesPerView: 3, spaceBetween: 16 },
+  1024: { slidesPerView: 4, spaceBetween: 20 },
+  1440: { slidesPerView: 5, spaceBetween: 24 },
 }
+
 
 export default function NecklacesSection() {
   const [products, setProducts] = useState([])
@@ -130,17 +130,25 @@ export default function NecklacesSection() {
   )
 }
 
-function CreamSkeleton() {
+function ProductSkeleton() {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-brand/10 bg-white/80 p-5">
-      <div className="animate-pulse rounded-2xl bg-brand/10" style={{ aspectRatio: "4 / 5" }} />
+    <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-brand/10 bg-white p-5">
+      {/* Image placeholder (match ProductCard image size) */}
+      <div
+        className="animate-pulse rounded-2xl bg-brand/10"
+        style={{ aspectRatio: "4 / 5" }}
+      />
+      
+      {/* Text lines */}
       <div className="mt-4 space-y-3">
-        <div className="h-4 w-3/4 animate-pulse rounded-full bg-brand/10" />
-        <div className="h-4 w-1/2 animate-pulse rounded-full bg-brand/10" />
+        <div className="h-4 w-3/4 animate-pulse rounded-full bg-brand/20" />
+        <div className="h-4 w-1/2 animate-pulse rounded-full bg-brand/20" />
       </div>
+
+      {/* Buttons / actions */}
       <div className="mt-auto flex flex-col gap-3 pt-5">
-        <div className="h-10 w-full animate-pulse rounded-full bg-brand/10" />
-        <div className="h-10 w-full animate-pulse rounded-full bg-brand/5" />
+        <div className="h-10 w-full animate-pulse rounded-full bg-brand/15" />
+        <div className="h-10 w-full animate-pulse rounded-full bg-brand/15" />
       </div>
     </div>
   )

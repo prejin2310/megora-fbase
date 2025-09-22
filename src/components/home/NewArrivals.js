@@ -11,11 +11,10 @@ import { getNewArrivals } from "@/lib/db"
 import ProductCard from "@/components/product/ProductCard"
 
 const sliderBreakpoints = {
-  0: { slidesPerView: 1.15, spaceBetween: 14 },
-  480: { slidesPerView: 2, spaceBetween: 16 },
-  768: { slidesPerView: 3, spaceBetween: 20 },
-  1024: { slidesPerView: 4, spaceBetween: 24 },
-  1440: { slidesPerView: 5, spaceBetween: 28 },
+  0: { slidesPerView: 2, spaceBetween: 12 },   // ✅ exactly 2 cards on mobile
+  640: { slidesPerView: 3, spaceBetween: 16 },
+  1024: { slidesPerView: 4, spaceBetween: 20 },
+  1440: { slidesPerView: 5, spaceBetween: 24 },
 }
 
 export default function NewArrivals() {
@@ -44,6 +43,7 @@ export default function NewArrivals() {
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-[#03332D] via-[#064439] to-[#012320] py-16 text-white">
+      {/* Decorative blurs */}
       <div className="pointer-events-none absolute -left-24 top-12 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
       <div className="pointer-events-none absolute bottom-0 right-[-160px] h-80 w-80 rounded-full bg-emerald-500/20 blur-3xl" />
 
@@ -83,7 +83,7 @@ export default function NewArrivals() {
             autoplay={{
               delay: 3500,
               disableOnInteraction: false,
-              pauseOnMouseEnter: true, // ✅ pause when hovered
+              pauseOnMouseEnter: true,
             }}
             loop
             breakpoints={sliderBreakpoints}
@@ -133,18 +133,29 @@ export default function NewArrivals() {
   )
 }
 
+
 function ProductSkeleton() {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-white/15 bg-white/10 p-5">
-      <div className="animate-pulse rounded-2xl bg-white/15" style={{ aspectRatio: "4 / 5" }} />
+    <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-brand/10 bg-white p-5">
+      {/* Image placeholder (match ProductCard image size) */}
+      <div
+        className="animate-pulse rounded-2xl bg-brand/10"
+        style={{ aspectRatio: "4 / 5" }}
+      />
+      
+      {/* Text lines */}
       <div className="mt-4 space-y-3">
-        <div className="h-4 w-3/4 animate-pulse rounded-full bg-white/20" />
-        <div className="h-4 w-1/2 animate-pulse rounded-full bg-white/20" />
+        <div className="h-4 w-3/4 animate-pulse rounded-full bg-brand/20" />
+        <div className="h-4 w-1/2 animate-pulse rounded-full bg-brand/20" />
       </div>
+
+      {/* Buttons / actions */}
       <div className="mt-auto flex flex-col gap-3 pt-5">
-        <div className="h-10 w-full animate-pulse rounded-full bg-white/15" />
-        <div className="h-10 w-full animate-pulse rounded-full bg-white/15" />
+        <div className="h-10 w-full animate-pulse rounded-full bg-brand/15" />
+        <div className="h-10 w-full animate-pulse rounded-full bg-brand/15" />
       </div>
     </div>
   )
 }
+
+
