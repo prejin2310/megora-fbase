@@ -255,3 +255,14 @@ export async function getProductsByCategory(slug, max = 12) {
     return []
   }
 }
+
+export async function getUserById(uid) {
+  try {
+    const ref = doc(db, "users", uid)
+    const snap = await getDoc(ref)
+    return snap.exists() ? { id: snap.id, ...snap.data() } : null
+  } catch (error) {
+    console.error("db:getUserById", error)
+    return null
+  }
+}

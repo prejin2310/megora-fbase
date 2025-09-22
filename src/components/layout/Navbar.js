@@ -70,6 +70,8 @@ const editorialHighlights = [
   },
 ]
 
+const DEFAULT_AVATAR = "https://res.cloudinary.com/dxlfzftq9/image/upload/v1758568751/av2_xvv17q.png";
+
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
@@ -538,62 +540,78 @@ export default function Navbar() {
             </Link>
 
             {/* Profile / Login */}
-            {authLoading ? (
-              <div
-                className="h-7 w-7 rounded-full border border-white/50 animate-pulse"
-                aria-hidden="true"
-              />
-            ) : user ? (
-              <div className="relative" ref={profileMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setProfileMenuOpen((prev) => !prev)}
-                  className="transition-colors duration-300"
-                  title="Profile menu"
-                  aria-haspopup="menu"
-                  aria-expanded={profileMenuOpen}
-                >
-                  <UserCircleIcon className="h-7 w-7 text-white hover:text-gray-200" />
-                </button>
-                {profileMenuOpen && (
-                  <div className="absolute right-0 mt-3 w-48 rounded-xl bg-white/95 shadow-xl ring-1 ring-black/5 backdrop-blur-md">
-                    <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-semibold text-gray-800">{user.displayName || "Welcome back"}</p>
-                      {user.email && (
-                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                      )}
-                    </div>
-                    <div className="py-2">
-                      <Link
-                        href="/profile"
-                        onClick={() => setProfileMenuOpen(false)}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        View Profile
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={handleLogout}
-                        disabled={loggingOut}
-                        className="flex w-full items-center justify-between px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
-                      >
-                        Logout
-                        {loggingOut && <span className="text-xs text-red-400">...</span>}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link
-                href="/login"
-                className="transition-colors duration-300"
-                title="Login"
-                aria-label="Go to login"
-              >
-                <ArrowRightOnRectangleIcon className="h-7 w-7 text-white hover:text-gray-200" />
-              </Link>
-            )}
+{/* Profile / Login */}
+{authLoading ? (
+  <div className="h-8 w-8 rounded-full border border-white/50 animate-pulse" />
+) : user ? (
+  // Logged in → show avatar + dropdown
+  <div className="relative" ref={profileMenuRef}>
+    <button
+      type="button"
+      onClick={() => setProfileMenuOpen((prev) => !prev)}
+      className="transition"
+      title="My Account"
+      aria-haspopup="menu"
+      aria-expanded={profileMenuOpen}
+    >
+      <Image
+        src={user.photoURL || DEFAULT_AVATAR}
+        alt="User Avatar"
+        width={32}
+        height={32}
+        className="rounded-full border border-white/40 object-cover"
+      />
+    </button>
+
+    {profileMenuOpen && (
+      <div className="absolute right-0 mt-3 w-48 rounded-xl bg-white/95 shadow-xl ring-1 ring-black/5 backdrop-blur-md">
+        <div className="px-4 py-3 border-b border-gray-100">
+          <p className="text-sm font-semibold text-gray-800">
+            {user.displayName || "Welcome back"}
+          </p>
+          {user.email && (
+            <p className="text-xs text-gray-500 truncate">{user.email}</p>
+          )}
+        </div>
+        <div className="py-2">
+          <Link
+            href="/profile"
+            onClick={() => setProfileMenuOpen(false)}
+            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            View Profile
+          </Link>
+          <Link
+            href="/orders"
+            onClick={() => setProfileMenuOpen(false)}
+            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            My Orders
+          </Link>
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="flex w-full items-center justify-between px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
+          >
+            Logout
+            <ArrowRightOnRectangleIcon className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+    )}
+  </div>
+) : (
+  // Not logged in → show login icon only
+  <Link
+    href="/login"
+    className="transition-colors duration-300"
+    title="Login / Signup"
+  >
+    <UserCircleIcon className="h-7 w-7 text-white hover:text-gray-200" />
+  </Link>
+)}
+
           </div>
         </div>
       </nav>

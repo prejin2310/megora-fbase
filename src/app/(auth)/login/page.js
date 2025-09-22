@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { signInWithEmailAndPassword } from "firebase/auth"
-import { auth } from "@/lib/firebase"
+import { auth, db } from "@/lib/firebase"
+import { doc, getDoc } from "firebase/firestore"
 import toast from "react-hot-toast"
 import PhoneAuth from "@/components/auth/PhoneAuth"
 import {
@@ -18,12 +19,27 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
 
+  // 🔹 Admin modal states
+  const [showAdminModal, setShowAdminModal] = useState(false)
+  const [authCode, setAuthCode] = useState("")
+  const [error, setError] = useState("")
+  const [pendingUser, setPendingUser] = useState(null)
+
   const handleEmailLogin = async () => {
     try {
       setLoading(true)
       const cred = await signInWithEmailAndPassword(auth, email, password)
+      const userDoc = await getDoc(doc(db, "users", cred.user.uid))
+      const role = userDoc.exists() ? userDoc.data().role : "user"
+
       toast.success("Welcome back 🎉")
-      router.push("/")
+
+      if (role === "admin") {
+        setPendingUser(cred.user)
+        setShowAdminModal(true) // show modal for auth code
+      } else {
+        router.push("/")
+      }
     } catch (err) {
       console.error("login-email", err)
       toast.error("Invalid credentials")
@@ -68,7 +84,15 @@ export default function LoginPage() {
         </div>
 
         {/* Phone login */}
-        {tab === "phone" && <PhoneAuth mode="login" onSuccess={() => router.push("/")} />}
+        {tab === "phone" && (
+          <PhoneAuth
+            mode="login"
+            onSuccess={(user) => {
+              toast.success("Welcome back 🎉")
+              router.push("/")
+            }}
+          />
+        )}
 
         {/* Email login */}
         {tab === "email" && (
@@ -106,11 +130,64 @@ export default function LoginPage() {
         {/* Links */}
         <p className="text-center text-sm mt-6">
           Don’t have an account?{" "}
-          <a href="/auth/signup" className="font-medium text-brand hover:underline">
+          <a href="/signup" className="font-medium text-brand hover:underline">
             Create one
           </a>
         </p>
       </div>
+
+      {/* 🔹 Admin Auth Modal */}
+      {showAdminModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl p-6 shadow-lg w-[90%] max-w-sm">
+            <h2 className="text-lg font-semibold text-brand mb-4">
+              Admin Authentication
+            </h2>
+            <input
+              type="password"
+              value={authCode}
+              onChange={(e) => setAuthCode(e.target.value)}
+              placeholder="Enter Auth Code"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 mb-3"
+            />
+            {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  if (authCode !== "Meghna567#") {
+                    setError("Invalid Admin Auth Code")
+                    return
+                  }
+                  router.push("/admin")
+                  setShowAdminModal(false)
+                  setPendingUser(null)
+                  setAuthCode("")
+                  setError("")
+                }}
+                className="flex-1 bg-brand text-white py-2 rounded-lg hover:bg-brand/90"
+              >
+                Go to Dashboard
+              </button>
+              <button
+                onClick={() => {
+                  if (authCode !== "Meghna567#") {
+                    setError("Invalid Admin Auth Code")
+                    return
+                  }
+                  router.push("/")
+                  setShowAdminModal(false)
+                  setPendingUser(null)
+                  setAuthCode("")
+                  setError("")
+                }}
+                className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300"
+              >
+                Go to Homepage
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
