@@ -89,6 +89,22 @@ export function CartProvider({ children }) {
     [syncCart, user]
   )
 
+  const updateQuantity = useCallback(
+    (id, variant, newQty) => {
+      setCart((prev) => {
+        const updated = prev.map((p) =>
+          p.id === id && p.variant === variant
+            ? { ...p, qty: Math.max(1, newQty) }
+            : p
+        )
+        syncCart(updated)
+        toast.success("Cart updated")
+        return updated
+      })
+    },
+    [syncCart]
+  )
+
   const removeItem = useCallback(
     (id, variant) => {
       setCart((prev) => {
@@ -113,9 +129,18 @@ export function CartProvider({ children }) {
     }
   }, [])
 
+  // ✅ Export both names: removeItem & removeFromCart
   const value = useMemo(
-    () => ({ cart, addItem, removeItem, clearCart, buyNow }),
-    [addItem, buyNow, cart, clearCart, removeItem]
+    () => ({
+      cart,
+      addItem,
+      updateQuantity,
+      removeItem,
+      removeFromCart: removeItem, // alias
+      clearCart,
+      buyNow,
+    }),
+    [addItem, updateQuantity, buyNow, cart, clearCart, removeItem]
   )
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>

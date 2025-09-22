@@ -170,52 +170,62 @@ export async function getCategories() {
 //
 // 🔹 Filtered products (single clean version)
 //
-export async function getFilteredProducts({ categoryId, priceRange, sort }) {
+export async function getFilteredProducts({ categorySlug, priceRange, sort }) {
+  let products = []
+
   try {
-    const q = query(collection(db, "products"), orderBy("createdAt", "desc"))
-    const snapshot = await getDocs(q)
-
-    let results = snapshot.docs.map((doc) => {
-      const data = doc.data()
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate
-          ? data.createdAt.toDate()
-          : new Date(data.createdAt || Date.now()),
-        price: Number(data.price) || 0,
-      }
-    })
-
-    // ✅ Category filter
-    if (categoryId && categoryId !== "all") {
-      results = results.filter((p) => p.categoryId === categoryId)
-    }
-
-    // ✅ Price filter
-    if (priceRange && priceRange.length === 2) {
-      const [min, max] = priceRange
-      if (min > 0 || max < 999999) {
-        results = results.filter(
-          (p) => p.price >= min && (max ? p.price <= max : true)
-        )
+    // 1️⃣ Find category by slug
+    let categoryId = null
+    if (categorySlug && categorySlug !== "all") {
+      const catQuery = query(
+        collection(db, "categories"),
+        where("slug", "==", categorySlug.toLowerCase())
+      )
+      const catSnap = await getDocs(catQuery)
+      if (!catSnap.empty) {
+        categoryId = catSnap.docs[0].id
       }
     }
 
-    // ✅ Sorting
-    if (sort === "priceLow") {
-      results.sort((a, b) => a.price - b.price)
-    } else if (sort === "priceHigh") {
-      results.sort((a, b) => b.price - a.price)
-    } else if (sort === "newest") {
-      results.sort((a, b) => b.createdAt - a.createdAt)
+    // 2️⃣ Query products
+    let prodQuery
+    if (categoryId) {
+      prodQuery = query(
+        collection(db, "products"),
+        where("categoryId", "==", categoryId)
+      )
     } else {
-      results.sort((a, b) => b.createdAt - a.createdAt)
+      prodQuery = collection(db, "products") // all
     }
 
-    return results
-  } catch (error) {
-    console.error("db:getFilteredProducts", error)
+    const prodSnap = await getDocs(prodQuery)
+    products = prodSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+
+    // 3️⃣ Apply filters
+    if (priceRange) {
+      products = products.filter((p) => {
+        const price =
+          p.variants?.[0]?.prices?.INR ||
+          p.variants?.[0]?.option?.priceINR ||
+          p.priceINR ||
+          0
+        return price >= priceRange[0] && price <= priceRange[1]
+      })
+    }
+
+    if (sort === "priceLow") {
+      products.sort((a, b) => getPrice(a) - getPrice(b))
+    } else if (sort === "priceHigh") {
+      products.sort((a, b) => getPrice(b) - getPrice(a))
+    } else if (sort === "newest") {
+      products.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      )
+    }
+
+    return products
+  } catch (err) {
+    console.error("getFilteredProducts error:", err)
     return []
   }
 }
@@ -223,18 +233,25 @@ export async function getFilteredProducts({ categoryId, priceRange, sort }) {
 //
 // 🔹 Get products by categoryId
 //
-export async function getProductsByCategory(categoryId, limitCount = 10) {
+export async function getProductsByCategory(slug, max = 12) {
   try {
-    const q = query(
+    // 1️⃣ Find category by slug
+    const catQuery = query(collection(db, "categories"), where("slug", "==", slug))
+    const catSnap = await getDocs(catQuery)
+    if (catSnap.empty) return []
+
+    const categoryId = catSnap.docs[0].id
+
+    // 2️⃣ Get products with that categoryId
+    const prodQuery = query(
       collection(db, "products"),
-      where("categoryId", "==", categoryId), // ✅ use categoryId (matches Firestore schema)
-      orderBy("createdAt", "desc"),
-      limit(limitCount)
+      where("categoryId", "==", categoryId),
+      limit(max)
     )
-    const snapshot = await getDocs(q)
-    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-  } catch (error) {
-    console.error("db:getProductsByCategory", error)
+    const prodSnap = await getDocs(prodQuery)
+    return prodSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  } catch (err) {
+    console.error("getProductsByCategory error:", err)
     return []
   }
 }

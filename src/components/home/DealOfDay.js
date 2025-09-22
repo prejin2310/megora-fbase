@@ -163,7 +163,7 @@ export default function DealOfDay() {
   }
 
   return (
-  <section className="relative overflow-hidden bg-gradient-to-t from-white via-[#F3FBFA] to-[#E6F4F2] py-20 text-brand">
+<section className="relative overflow-hidden bg-gradient-to-b from-[#E6F4F2] via-[#F9FDFD] to-white py-20 text-brand">
       <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 md:flex-row md:items-center">
         <div className="relative w-full overflow-hidden rounded-[32px] border border-brand/10 bg-white shadow-2xl md:w-2/5">
           <div className="relative aspect-[4/5]">

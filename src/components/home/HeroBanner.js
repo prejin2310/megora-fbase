@@ -41,7 +41,7 @@ export default function HeroBanner() {
               Shop the collection
             </Link>
             <Link
-              href="/#necklaces-section"
+              href="/category/necklace"
               className="inline-flex items-center justify-center gap-2 rounded-full border border-white/60 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
             >
               <SparklesIcon className="h-5 w-5" />
