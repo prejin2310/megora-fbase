@@ -6,7 +6,7 @@ import Image from "next/image"
 import { EnvelopeIcon, PhoneIcon, MapPinIcon } from "@heroicons/react/24/outline"
 
 const quickLinks = [
-  { label: "Shop all", href: "/products" },
+  { label: "Shop all", href: "/product" },
   { label: "New arrivals", href: "/#new-arrivals" },
   { label: "Necklaces", href: "/category/necklaces" },
   { label: "Rings", href: "/category/rings" },
@@ -76,13 +76,13 @@ export default function Footer() {
               </a>
               <a href="tel:+919876543210" className="flex items-center gap-2 hover:text-white">
                 <PhoneIcon className="h-5 w-5" />
-                +91 98765 43210
+                +91 77361 66728
               </a>
             </div>
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-white/60 md:flex-row md:items-center md:justify-between">
+        {/* <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-white/60 md:flex-row md:items-center md:justify-between">
           <p>Copyright {year} Megora Jewels.</p>
           <p>
             Developed by{' '}
@@ -95,7 +95,7 @@ export default function Footer() {
               PR Folio
             </a>
           </p>
-        </div>
+        </div> */}
       </div>
     </footer>
   )

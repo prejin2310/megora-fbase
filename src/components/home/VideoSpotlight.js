@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useState } from "react"
-import { ShieldCheckIcon, UsersIcon, CurrencyRupeeIcon } from "@heroicons/react/24/outline"
+import { ShieldCheckIcon, UsersIcon, CurrencyRupeeIcon,MapPinIcon } from "@heroicons/react/24/outline"
 
 const whyMegoraHighlights = [
   {
@@ -13,6 +13,11 @@ const whyMegoraHighlights = [
     title: "Affordable Luxury",
     description: "Timeless designs at prices that fit your budget.",
     icon: CurrencyRupeeIcon,
+  },
+   {
+    title: "Exclusive live Tracking",
+    description: "Updates sent directly to you.",
+    icon: MapPinIcon,
   },
   {
     title: "Trusted by Many",
@@ -29,8 +34,8 @@ const studioStats = [
 export default function VideoSpotlight({
   poster = "/loginBanner.png",
   videoSrc = "/video1.mp4",
-  heading = "Inside the Megora atelier",
-  description = "Take a slow tour of our polishing rooms, stone-setting lab, and packaging tables where every order is finished by hand.",
+  heading = "Premium touches that make every order unforgettable.",
+  description = " ",
 }) {
   const [loaded, setLoaded] = useState(false)
 
@@ -74,7 +79,7 @@ export default function VideoSpotlight({
 
           <div className="space-y-6">
             <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.32em] text-brand/70">Studio Glimpse</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.32em] text-brand/70">Why Megora</p>
               <h2 className="font-playfair text-3xl text-brand md:text-4xl">{heading}</h2>
               <p className="text-sm leading-relaxed text-gray-600">{description}</p>
             </div>
@@ -96,12 +101,12 @@ export default function VideoSpotlight({
               ))}
             </div>
 
-            <div className="rounded-3xl border border-brand/10 bg-white/90 p-6 text-sm text-gray-600 shadow-[0_28px_70px_-55px_rgba(6,56,48,0.35)]">
+            {/* <div className="rounded-3xl border border-brand/10 bg-white/90 p-6 text-sm text-gray-600 shadow-[0_28px_70px_-55px_rgba(6,56,48,0.35)]">
               <p>
                 Want something custom? Email <span className="font-semibold text-brand">megorajewels@gmail.com</span> or WhatsApp
                 <span className="font-semibold text-brand"> +91 77361 66728</span> to connect with our team.
               </p>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

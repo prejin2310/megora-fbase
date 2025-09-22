@@ -34,14 +34,14 @@ export default function HeroBanner() {
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/products"
+              href="/product"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-brand transition hover:bg-brand-light/90"
             >
               <ShoppingBagIcon className="h-5 w-5" />
               Shop the collection
             </Link>
             <Link
-              href="/category/necklaces"
+              href="/#necklaces-section"
               className="inline-flex items-center justify-center gap-2 rounded-full border border-white/60 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
             >
               <SparklesIcon className="h-5 w-5" />

@@ -37,10 +37,9 @@ export default function HomePage() {
       <HeroBanner />
       <NewArrivals />
       <NecklacesSection />
-      <DealOfDay />
-      <FeatureHighlights />clsx
-      <VideoSpotlight />
       <Categories />
+      <DealOfDay />
+      <VideoSpotlight />
       <Reviews />
     </div>
   )

@@ -34,7 +34,7 @@ export default function Categories() {
   }
 
   return (
-    <section className="bg-white py-16">
+    <section className="bg-gradient-to-b from-[#FFF9F1] via-white to-brand/5 py-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4">
         <div className="flex flex-col gap-4 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-brand/70">
@@ -86,5 +86,3 @@ function CategoryCard({ category }) {
     </Link>
   )
 }
-
-

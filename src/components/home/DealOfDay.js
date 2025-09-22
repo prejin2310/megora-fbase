@@ -163,8 +163,7 @@ export default function DealOfDay() {
   }
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#FFEEDD] via-[#FFF6EF] to-white py-20 text-brand">
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-[#F6D9C4] to-transparent" />
+  <section className="relative overflow-hidden bg-gradient-to-t from-white via-[#F3FBFA] to-[#E6F4F2] py-20 text-brand">
       <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 md:flex-row md:items-center">
         <div className="relative w-full overflow-hidden rounded-[32px] border border-brand/10 bg-white shadow-2xl md:w-2/5">
           <div className="relative aspect-[4/5]">
@@ -262,18 +261,3 @@ function TimePill({ label, value }) {
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
