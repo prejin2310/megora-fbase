@@ -49,21 +49,21 @@ export function WishlistProvider({ children }) {
 
   /* ----------------- Wishlist Actions ----------------- */
   const toggleWishlist = (item) => {
-    setWishlist((prev) => {
-      const exists = prev.find((p) => p.id === item.id)
-      let updated
-      if (exists) {
-        updated = prev.filter((p) => p.id !== item.id)
-        toast("Removed from wishlist", { icon: "💔" })
-      } else {
-        updated = [...prev, item]
-        toast.success("Added to wishlist")
-        if (!user) toast("Login to save your wishlist across devices", { icon: "⚠️" })
-      }
+    const exists = wishlist.find((p) => p.id === item.id)
+    let updated
 
+    if (exists) {
+      updated = wishlist.filter((p) => p.id !== item.id)
+      setWishlist(updated)
       syncWishlist(updated)
-      return updated
-    })
+      toast("Removed from wishlist", { icon: "💔" })
+    } else {
+      updated = [...wishlist, item]
+      setWishlist(updated)
+      syncWishlist(updated)
+      toast.success("Added to wishlist")
+      if (!user) toast("Login to save your wishlist across devices", { icon: "⚠️" })
+    }
   }
 
   const isWishlisted = (id) => wishlist.some((i) => i.id === id)

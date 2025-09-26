@@ -159,7 +159,6 @@ export default function DealOfDay() {
       sku: primaryVariant?.sku || product?.sku || product?.handle,
       variant: primaryVariant?.option?.name || primaryVariant?.title || "default",
     })
-    toast.success("Deal added to cart")
   }
 
   return (

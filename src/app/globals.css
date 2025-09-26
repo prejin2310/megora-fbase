@@ -61,3 +61,23 @@
   animation: fadeInUp 0.6s ease forwards;
 }
 
+/* Toaster / react-hot-toast container adjustments */
+.site-toaster {
+  /* ensure the toasts are offset from top-left on desktop */
+  padding-top: 0; /* container level padding - we use inline containerStyle for exact offset */
+}
+
+/* mobile: move in a bit from edges and make toasts full width-ish */
+@media (max-width: 640px) {
+  .site-toaster {
+    left: 8px !important;
+    right: 8px !important;
+    top: 12px !important;
+    width: auto !important;
+  }
+  .react-hot-toast {
+    min-width: 0 !important;
+    width: auto !important;
+  }
+}
+

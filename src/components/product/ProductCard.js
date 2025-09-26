@@ -120,7 +120,6 @@ export default function ProductCard({ product }) {
       sku: primaryVariant?.sku || product?.sku || product?.handle,
       variant: primaryVariant?.option?.name || primaryVariant?.title || "default",
     })
-    toast.success("Added to cart")
   }
 
   const handleNotifySubmit = async (event) => {

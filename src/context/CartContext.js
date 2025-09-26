@@ -65,56 +65,46 @@ export function CartProvider({ children }) {
 
   const addItem = useCallback(
     (item) => {
-      setCart((prev) => {
-        const exists = prev.find((p) => p.id === item.id && p.variant === item.variant)
-        let updated
+      // derive updated cart from current state to avoid side-effects inside updater
+      const exists = cart.find((p) => p.id === item.id && p.variant === item.variant)
+      let updated
 
-        if (exists) {
-          updated = prev.map((p) =>
-            p.id === item.id && p.variant === item.variant
-              ? { ...p, qty: p.qty + item.qty }
-              : p
-          )
-        } else {
-          updated = [...prev, { ...item, qty: item.qty ?? 1 }]
-        }
+      if (exists) {
+        updated = cart.map((p) =>
+          p.id === item.id && p.variant === item.variant ? { ...p, qty: p.qty + item.qty } : p
+        )
+      } else {
+        updated = [...cart, { ...item, qty: item.qty ?? 1 }]
+      }
 
-        syncCart(updated)
-        toast.success("Added to cart")
-        if (!user) toast("Login to save your cart for later", { icon: "!" })
-
-        return updated
-      })
+      setCart(updated)
+      syncCart(updated)
+      toast.success("Added to cart")
+      if (!user) toast("Login to save your cart for later", { icon: "!" })
     },
-    [syncCart, user]
+    [cart, syncCart, user]
   )
 
   const updateQuantity = useCallback(
     (id, variant, newQty) => {
-      setCart((prev) => {
-        const updated = prev.map((p) =>
-          p.id === id && p.variant === variant
-            ? { ...p, qty: Math.max(1, newQty) }
-            : p
-        )
-        syncCart(updated)
-        toast.success("Cart updated")
-        return updated
-      })
+      const updated = cart.map((p) =>
+        p.id === id && p.variant === variant ? { ...p, qty: Math.max(1, newQty) } : p
+      )
+      setCart(updated)
+      syncCart(updated)
+      toast.success("Cart updated")
     },
-    [syncCart]
+    [cart, syncCart]
   )
 
   const removeItem = useCallback(
     (id, variant) => {
-      setCart((prev) => {
-        const updated = prev.filter((p) => !(p.id === id && p.variant === variant))
-        syncCart(updated)
-        return updated
-      })
+      const updated = cart.filter((p) => !(p.id === id && p.variant === variant))
+      setCart(updated)
+      syncCart(updated)
       toast.success("Removed from cart")
     },
-    [syncCart]
+    [cart, syncCart]
   )
 
   const clearCart = useCallback(() => {

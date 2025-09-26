@@ -140,7 +140,6 @@ export default function QuickViewModal({ open, onClose, product }) {
       sku: selectedVariant?.sku || product?.sku || product?.handle,
       variant: selectedVariant?.option?.name || selectedVariant?.title || "default",
     })
-    toast.success("Added to cart")
     onClose?.()
   }
 
