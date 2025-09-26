@@ -33,6 +33,18 @@ export default function SignupPage() {
         role: "user",
         createdAt: new Date(),
       })
+      // Send welcome email for gmail addresses via server API
+      try {
+        if (String(email).toLowerCase().endsWith("@gmail.com")) {
+          await fetch("/api/send-welcome", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, name }),
+          })
+        }
+      } catch (err) {
+        console.error("welcome email error", err)
+      }
       toast.success("Account created 🎉")
       router.push("/")
     } catch (err) {

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { logoutUser } from "@/lib/auth";
 import toast from "react-hot-toast";
+import { useAuth } from "@/context/AuthContext";
 
 // ✅ Heroicons
 import {
@@ -31,14 +32,42 @@ export default function AdminLayout({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user, initializing } = useAuth();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  // Redirect logic:
+  // - If auth is still initializing, do nothing
+  // - If user is signed in but not an admin -> redirect to homepage
+  // - If user is not signed in (logged out) -> redirect to login
+  useEffect(() => {
+    if (initializing) return; // wait until auth is resolved
+
+    if (user && user.role !== "admin") {
+      // signed-in but not admin — redirect to homepage
+      router.replace("/");
+      return;
+    }
+
+    if (!user) {
+      // not signed in — go to login page
+      router.replace("/login");
+      return;
+    }
+  }, [user, initializing, router]);
 
   const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
     try {
       await logoutUser();
+      // Use replace to avoid keeping /admin in history
+      router.replace("/login");
       toast.success("Logged out successfully");
-      router.push("/login");
     } catch (err) {
-      toast.error("Logout failed: " + err.message);
+      console.error("logout error", err);
+      toast.error("Logout failed: " + (err?.message || "unknown error"));
+    } finally {
+      setLoggingOut(false);
     }
   };
 
@@ -57,13 +86,20 @@ export default function AdminLayout({ children }) {
         </div>
         <button
           onClick={handleLogout}
-          className="text-sm bg-white text-gray-900 font-medium px-3 py-1.5 rounded hover:bg-gray-100"
+          disabled={loggingOut}
+          className={`text-sm bg-white text-gray-900 font-medium px-3 py-1.5 rounded ${loggingOut ? "opacity-70 cursor-wait" : "hover:bg-gray-100"}`}
         >
-          Logout
+          {loggingOut ? "Logging out…" : "Logout"}
         </button>
       </header>
 
       <div className="flex flex-1">
+        {/* While auth is initializing, show a simple loading state to avoid flicker */}
+        {initializing && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/80">
+            <div className="text-gray-700">Checking admin access…</div>
+          </div>
+        )}
         {/* Sidebar (desktop) */}
         <aside className="hidden md:block w-64 bg-white border-r border-gray-200">
           <nav className="p-4 space-y-1">
