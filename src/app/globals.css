@@ -2,11 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@import "swiper/css";
-@import "swiper/css/navigation";
-@import "swiper/css/pagination";
-
-
 @keyframes fade {
   0%, 100% { opacity: 0.2; }
   50% { opacity: 1; }
