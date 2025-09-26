@@ -66,8 +66,8 @@ export default function HeroBannerDiwali() {
               Light Up Your Diwali,<br /> Shine With Megora!
             </h1>
             <p className="text-sm text-white/85 sm:text-base">
-              Celebrate the Festival of Lights with jewellery that reflects your glow —
-              crafted with love, elegance, and festive sparkle.
+              Celebrate the Festival of Lights with jewellery that reflects your glow 
+              crafted with love, elegance, and festive sparkle
             </p>
           </div>
 
