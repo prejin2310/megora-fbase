@@ -20,6 +20,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { subscribeProducts } from "@/lib/db"
+import { getColorCode } from "@/lib/colors"
 import { useCart } from "@/context/CartContext"
 import { useWishlist } from "@/context/WishlistContext"
 import { useAuth } from "@/context/AuthContext"
@@ -135,7 +136,16 @@ export default function Navbar() {
     return clean.length > 80 ? `${clean.slice(0, 77)}…` : clean
   }
 
+  const getVariants = (item = {}) => {
+    if (!item) return []
+    if (Array.isArray(item.variants)) return item.variants
+    if (item.variants && typeof item.variants === "object") return Object.values(item.variants)
+    return []
+  }
+
   const formatPrice = (item = {}) => {
+    // Try product-level price first, then fall back to first variant price
+    const variant = getVariants(item)[0]
     const value =
       item.prices?.[currency] ??
       item.price?.[currency] ??
@@ -143,6 +153,11 @@ export default function Navbar() {
       item[`price${currency}`] ??
       item.priceINR ??
       item.price ??
+      // variant-level fallbacks
+      variant?.prices?.[currency] ??
+      variant?.option?.priceINR ??
+      variant?.prices?.INR ??
+      variant?.priceINR ??
       item.mrp ??
       item.salePrice ??
       null
@@ -371,6 +386,50 @@ export default function Navbar() {
                                       {highlightMatch(subtitle)}
                                     </p>
                                   )}
+                                  {/* Product metadata: SKU / code and color options */}
+                                  <div className="mt-1 flex items-center gap-3">
+                                    {(
+                                      product.sku || product.code || product.productCode || product.id
+                                    ) && (
+                                      <div className="text-xs text-gray-500">
+                                        <span className="font-medium text-gray-700">Product code:</span>
+                                        <span className="ml-1">{product.sku || product.code || product.productCode || product.id}</span>
+                                      </div>
+                                    )}
+
+                                    {/* Color swatches / labels from variants */}
+                                    {getVariants(product).length > 0 && (
+                                      <div className="flex items-center gap-1">
+                                        {getVariants(product).slice(0, 4).map((v, i) => {
+                                          // Heuristics to find color label from various shapes
+                                          let colorName =
+                                            v?.attributes?.color ||
+                                            v?.option?.color ||
+                                            v?.option?.name ||
+                                            v?.option?.title ||
+                                            v?.color ||
+                                            v?.options?.[0]?.name ||
+                                            v?.name ||
+                                            null
+                                          // If compound like 'Emerald / Size M', take first segment
+                                          if (colorName && typeof colorName === "string" && colorName.includes("/")) {
+                                            colorName = colorName.split("/")[0].trim()
+                                          }
+                                          const colorCode = v?.attributes?.colorCode || v?.colorCode || null
+                                          return colorName ? (
+                                            <div key={i} className="flex items-center gap-1">
+                                              <div
+                                                className="h-3 w-3 rounded-full border"
+                                                title={colorName}
+                                                style={{ backgroundColor: (colorCode || getColorCode(colorName)) || undefined }}
+                                              />
+                                            </div>
+                                          ) : null
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+
                                   <div className="mt-auto flex items-center justify-between text-xs text-gray-500">
                                     <span className="uppercase tracking-[0.2em] text-brand/60">
                                       {(product.categoryName || product.category || product.categorySlug || "Signature")

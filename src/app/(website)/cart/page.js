@@ -17,7 +17,7 @@ export default function CartPage() {
   const getVariantLabel = (item) =>
     item.variant?.option?.title || item.variant?.attributes?.size || null
 
-  const getLineTotal = (item) => getPrice(item) * (item.quantity || 1)
+  const getLineTotal = (item) => getPrice(item) * (item.qty ?? item.quantity ?? 1)
 
   const total = cart.reduce((sum, item) => sum + getLineTotal(item), 0)
 
@@ -72,25 +72,25 @@ export default function CartPage() {
                   <div className="flex items-center rounded-full border border-gray-300 shadow-sm">
                     <button
                       onClick={() =>
-                        updateQuantity(
-                          item.id,
-                          Math.max(1, (item.quantity || 1) - 1),
-                          item.variant?.id
-                        )
-                      }
+                          updateQuantity(
+                            item.id,
+                            Math.max(1, (item.qty ?? item.quantity ?? 1) - 1),
+                            item.variant
+                          )
+                        }
                       className="px-3 py-1 text-lg font-medium text-gray-600 hover:text-brand"
                     >
                       –
                     </button>
                     <span className="w-10 text-center text-sm font-medium">
-                      {item.quantity || 1}
+                      {item.qty ?? item.quantity ?? 1}
                     </span>
                     <button
                       onClick={() =>
                         updateQuantity(
                           item.id,
-                          (item.quantity || 1) + 1,
-                          item.variant?.id
+                          (item.qty ?? item.quantity ?? 1) + 1,
+                          item.variant
                         )
                       }
                       className="px-3 py-1 text-lg font-medium text-gray-600 hover:text-brand"
@@ -99,7 +99,7 @@ export default function CartPage() {
                     </button>
                   </div>
                   <button
-                    onClick={() => removeFromCart(item.id, item.variant?.id)}
+                    onClick={() => removeFromCart(item.id, item.variant)}
                     className="text-sm font-medium text-red-500 hover:text-red-600 transition"
                   >
                     Remove

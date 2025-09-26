@@ -136,10 +136,19 @@ export default function PhoneAuth({ mode = "login", onSuccess }) {
             <input
               key={idx}
               ref={(el) => (otpRefs.current[idx] = el)}
-              type="text"
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
               maxLength={1}
+              autoComplete="one-time-code"
               value={digit}
               onChange={(e) => handleOtpChange(e.target.value, idx)}
+              onKeyDown={(e) => {
+                if (e.key === "Backspace" && !e.currentTarget.value) {
+                  // move focus to previous input when pressing backspace on empty
+                  otpRefs.current[Math.max(0, idx - 1)]?.focus()
+                }
+              }}
               className="w-10 h-12 text-center border rounded-md text-lg font-medium focus:ring-1 focus:ring-brand outline-none"
             />
           ))}

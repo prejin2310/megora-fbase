@@ -10,13 +10,17 @@ const quickLinks = [
   { label: "New arrivals", href: "/#new-arrivals" },
   { label: "Wishlist", href: "/wishlist" },
   { label: "Cart", href: "/cart" },
+  { label: "About us", href: "/about" },
+  { label: "Contact us", href: "/contact" },
 ]
 
 const supportLinks = [
   { label: "Track orders", href: "/orders" },
   { label: "Return Policy", href: "/return-policy" },
   { label: "Shipping Policy", href: "/shipping-policy" },
-  { label: "Cart", href: "" },
+  { label: "Cancellation Policy", href: "/cancellation-policy" },
+  { label: "Privacy Policy", href: "/privacy" },
+  { label: "Terms & Conditions", href: "/terms" },
 ]
 
 export default function Footer() {
@@ -82,20 +86,14 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-white/60 md:flex-row md:items-center md:justify-between">
+        <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-white/60 md:flex-row md:items-center md:justify-between">
           <p>Copyright {year} Megora Jewels.</p>
-          <p>
-            Developed by{' '}
-            <a
-              href="https://instagram.com/pr.folio"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-semibold text-white hover:underline"
-            >
-              PR Folio
-            </a>
-          </p>
-        </div> */}
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="hover:underline">Privacy</Link>
+            <Link href="/terms" className="hover:underline">Terms</Link>
+            <Link href="/cancellation-policy" className="hover:underline">Cancellation</Link>
+          </div>
+        </div>
       </div>
     </footer>
   )

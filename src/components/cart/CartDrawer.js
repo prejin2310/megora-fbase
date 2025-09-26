@@ -11,7 +11,7 @@ export default function CartDrawer({ open, onClose }) {
   const { cart, removeItem, clearCart } = useCart()
   const router = useRouter()
 
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0)
+  const subtotal = cart.reduce((sum, item) => sum + Number(item.price || 0) * (item.qty ?? item.quantity ?? 1), 0)
 
   return (
     <div
@@ -63,10 +63,10 @@ export default function CartDrawer({ open, onClose }) {
                     <p className="text-xs text-gray-500">Size: {item.variant.size}</p>
                   )}
                   <p className="text-sm font-semibold">{inr(item.price)}</p>
-                  <p className="text-xs text-gray-500">Qty: {item.qty}</p>
+                  <p className="text-xs text-gray-500">Qty: {item.qty ?? item.quantity ?? 1}</p>
                 </div>
                 <button
-                  onClick={() => removeItem(item.id)}
+                  onClick={() => removeItem(item.id, item.variant)}
                   className="p-1 rounded hover:bg-red-50"
                 >
                   <TrashIcon className="h-5 w-5 text-red-500" />
