@@ -94,6 +94,10 @@ export default function Navbar() {
   const profileMenuRef = useRef(null)
   const user = auth?.user || null
   const authLoading = auth?.initializing ?? false
+  // Derive display name, first name and initial for friendly avatar
+  const displayNameFull = (user?.displayName || user?.email || "").toString()
+  const firstName = displayNameFull ? displayNameFull.split(" ")[0] : ""
+  const firstInitial = firstName ? firstName.trim().charAt(0).toUpperCase() : "U"
   const sanitizedQuery = query.trim()
   const hasQuery = sanitizedQuery.length >= 2
 
@@ -460,6 +464,73 @@ export default function Navbar() {
         </div>
       </Dialog>
 
+      {/* Mobile sidebar / drawer */}
+      <Dialog open={open} onClose={() => setOpen(false)} className="relative z-50 lg:hidden">
+        <DialogBackdrop className="fixed inset-0 bg-black/40 transition-opacity" />
+        <div className="fixed inset-0 flex">
+          <DialogPanel className="relative w-72 max-w-full overflow-y-auto bg-white/95 p-4 shadow-2xl ring-1 ring-black/5 backdrop-blur">
+            <div className="flex items-center justify-between">
+              <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-2">
+                <Image src="/logoLan.png" alt="Megora" width={100} height={60} />
+              </Link>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-md p-2 text-gray-700 hover:bg-gray-100"
+                aria-label="Close menu"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            <nav className="mt-6 space-y-2">
+              <Link href="/" onClick={() => setOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:bg-gray-100">Home</Link>
+              <Link href="/collections" onClick={() => setOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:bg-gray-100">Shop</Link>
+              <Link href="/categories" onClick={() => setOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:bg-gray-100">Categories</Link>
+              <Link href="/wishlist" onClick={() => setOpen(false)} className="flex items-center justify-between px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:bg-gray-100">
+                <span>Wishlist</span>
+                {wishlist.length > 0 && <span className="ml-2 inline-flex items-center justify-center rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">{wishlist.length}</span>}
+              </Link>
+              <Link href="/cart" onClick={() => setOpen(false)} className="flex items-center justify-between px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:bg-gray-100">
+                <span>Cart</span>
+                {cart.length > 0 && <span className="ml-2 inline-flex items-center justify-center rounded-full bg-yellow-500 px-2 py-0.5 text-xs text-white">{cart.length}</span>}
+              </Link>
+
+              <div className="pt-2">
+                {user ? (
+                  <Link href="/profile" onClick={() => setOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:bg-gray-100">{firstName || user.displayName || 'Profile'}</Link>
+                ) : (
+                  <Link href="/login" onClick={() => setOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:bg-gray-100">Login / Signup</Link>
+                )}
+              </div>
+            </nav>
+
+            <div className="mt-6 border-t border-gray-100 pt-4">
+              <p className="text-xs uppercase tracking-[0.35em] text-gray-500">Quick picks</p>
+              <div className="mt-3 grid gap-2">
+                {curatedSearches.map((item) => (
+                  <button
+                    key={item.title}
+                    type="button"
+                    onClick={() => { setQuery(item.query); setOpen(false); openSearch(); }}
+                    className="text-left rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{item.title}</span>
+                      <span className="text-xs text-gray-400">{item.badge}</span>
+                    </div>
+                    <div className="text-xs text-gray-500">{item.subtitle}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </DialogPanel>
+
+          {/* click on overlay closes drawer */}
+          <div className="flex-1" onClick={() => setOpen(false)} />
+        </div>
+      </Dialog>
+
       <header
         className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ease-in-out ${navbarBg}`}
       >
@@ -550,24 +621,24 @@ export default function Navbar() {
       type="button"
       onClick={() => setProfileMenuOpen((prev) => !prev)}
       className="transition"
-      title="My Account"
+      title={firstName || user?.displayName || "My Account"}
       aria-haspopup="menu"
       aria-expanded={profileMenuOpen}
     >
-      <Image
-        src={user.photoURL || DEFAULT_AVATAR}
-        alt="User Avatar"
-        width={32}
-        height={32}
-        className="rounded-full border border-white/40 object-cover"
-      />
+      {/* Letter avatar (first initial) */}
+      <div
+        aria-hidden="true"
+        className="flex h-8 w-8 items-center justify-center rounded-full border border-white/30 bg-white/10 text-sm font-medium text-white"
+      >
+        {firstInitial}
+      </div>
     </button>
 
     {profileMenuOpen && (
       <div className="absolute right-0 mt-3 w-48 rounded-xl bg-white/95 shadow-xl ring-1 ring-black/5 backdrop-blur-md">
         <div className="px-4 py-3 border-b border-gray-100">
           <p className="text-sm font-semibold text-gray-800">
-            {user.displayName || "Welcome back"}
+            {firstName || user.displayName || "Welcome back"}
           </p>
           {user.email && (
             <p className="text-xs text-gray-500 truncate">{user.email}</p>

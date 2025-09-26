@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react"
 import { onAuthStateChanged } from "firebase/auth"
 import { auth } from "@/lib/firebase"
+import { getUserById } from "@/lib/db"
 
 // ✅ Safe default value
 const AuthContext = createContext({ user: null, initializing: true })
@@ -13,8 +14,36 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u)
-      setInitializing(false)
+      async function hydrate() {
+        if (!u) {
+          setUser(null)
+          setInitializing(false)
+          return
+        }
+
+        try {
+          const profile = await getUserById(u.uid)
+          // Merge profile name into the user object so components can use user.displayName
+          const merged = {
+            uid: u.uid,
+            email: u.email,
+            photoURL: u.photoURL,
+            displayName: profile?.name || u.displayName || null,
+            phoneNumber: profile?.phone || u.phoneNumber || null,
+            role: profile?.role || null,
+            // keep raw firebase user in case callers need it
+            _raw: u,
+          }
+          setUser(merged)
+        } catch (err) {
+          console.error("AuthContext: failed to load profile", err)
+          setUser(u)
+        } finally {
+          setInitializing(false)
+        }
+      }
+
+      hydrate()
     })
     return () => unsub()
   }, [])
