@@ -61,7 +61,7 @@ export default function DiwaliSaleSection() {
             </p>
           </div>
           <Link
-            href="/sale/diwali"
+            href="/product"
             className="inline-flex w-max items-center justify-center rounded-full border border-amber-400/50 px-6 py-2 text-sm font-semibold text-amber-300 transition hover:bg-amber-400/20"
           >
             Explore All Deals
