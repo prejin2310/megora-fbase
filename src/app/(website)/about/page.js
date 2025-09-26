@@ -10,7 +10,7 @@ export default function AboutPage() {
         <p className="text-gray-700 mb-4">
           Megora Jewels crafts handcrafted jewelry inspired by tradition and modern design. Our atelier focuses on
           quality, sustainability, and timeless pieces you’ll treasure. This is dummy content — replace with your
-          real "About" copy.
+          real &quot;About&quot; copy.
         </p>
         <p className="text-gray-600">For collaborations or press, reach out via our contact page.</p>
       </div>
