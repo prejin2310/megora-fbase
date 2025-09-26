@@ -8,15 +8,15 @@ import { EnvelopeIcon, PhoneIcon, MapPinIcon } from "@heroicons/react/24/outline
 const quickLinks = [
   { label: "Shop all", href: "/product" },
   { label: "New arrivals", href: "/#new-arrivals" },
-  { label: "Necklaces", href: "/category/necklaces" },
-  { label: "Rings", href: "/category/rings" },
+  { label: "Wishlist", href: "/wishlist" },
+  { label: "Cart", href: "/cart" },
 ]
 
 const supportLinks = [
   { label: "Track orders", href: "/orders" },
-  { label: "Returns & care", href: "/return-policy" },
-  { label: "Wishlist", href: "/wishlist" },
-  { label: "Cart", href: "/cart" },
+  { label: "Return Policy", href: "/return-policy" },
+  { label: "Shipping Policy", href: "/shipping-policy" },
+  { label: "Cart", href: "" },
 ]
 
 export default function Footer() {
