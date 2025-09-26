@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 
 // import HeroBanner from "@/components/home/HeroBanner"
-import NewArrivals from "@/components/home/NewArrivals"
+// import NewArrivals from "@/components/home/NewArrivals"
 import NecklacesSection from "@/components/home/NecklacesSection"
 import DealOfDay from "@/components/home/DealOfDay"
 import FeatureHighlights from "@/components/home/FeatureHighlights"
@@ -11,6 +11,7 @@ import VideoSpotlight from "@/components/home/VideoSpotlight"
 import Categories from "@/components/home/Categories"
 import Reviews from "@/components/home/Reviews"
 import HeroBannerDiwali from "@/components/home/HeroBannerDiwali"
+import DiwaliSaleSection from "@/components/home/DiwaliSaleSection"
 
 const LOADER_DELAY = 650
 
@@ -37,7 +38,8 @@ export default function HomePage() {
     <div className="bg-white text-gray-900">
       {/* <HeroBanner /> */}
       <HeroBannerDiwali/>
-      <NewArrivals />
+      {/* <NewArrivals /> */}
+      <DiwaliSaleSection />
       <NecklacesSection />
       <Categories />
       <DealOfDay />
