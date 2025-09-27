@@ -13,6 +13,7 @@ import {
   CubeIcon,
   Squares2X2Icon,
   ShoppingBagIcon,
+  ChatBubbleLeftRightIcon,
   UsersIcon,
   TagIcon,
   Cog6ToothIcon,
@@ -22,6 +23,7 @@ const navItems = [
   { name: "Dashboard", href: "/admin", icon: HomeIcon },
   { name: "Products", href: "/admin/products", icon: CubeIcon },
   { name: "Categories", href: "/admin/categories", icon: Squares2X2Icon }, // ✅ new
+  { name: "Community Reviews", href: "/admin/community-reviews", icon: ChatBubbleLeftRightIcon },
   { name: "Orders", href: "/admin/orders", icon: ShoppingBagIcon },
   { name: "Customers", href: "/admin/customers", icon: UsersIcon },
   { name: "Coupons", href: "/admin/coupons", icon: TagIcon },

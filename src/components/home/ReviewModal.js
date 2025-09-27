@@ -34,25 +34,24 @@ export default function ReviewModal({ review, onClose }) {
 
         {/* Order details */}
         <p className="text-xs text-gray-500 mb-2">
-          Order: {review.orderId} â€¢ Date: {review.date}
+          Order: {review.orderId} {'\u2022'} Date: {review.date}
         </p>
 
         {/* Text */}
-        <p className="text-gray-700 text-sm leading-relaxed mb-4">{review.text}</p>
+        <p className="text-gray-700 text-sm leading-relaxed mb-4">{review.message || review.text || review}</p>
 
         {/* Images */}
         {review.images?.length > 0 && (
-          <div className="grid grid-cols-2 gap-3">
-            {review.images.map((img, i) => (
-              <div key={i} className="relative w-full h-32 rounded-lg overflow-hidden">
-                <Image
-                  src={img}
-                  alt={`Review image ${i + 1}`}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            ))}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {review.images.map((img, i) => {
+              const src = typeof img === 'string' ? img : (img?.url || img)
+              return (
+                <div key={i} className="w-full h-40 rounded-lg overflow-hidden bg-gray-100 border">
+                  {/* Using standard img to avoid next/image domain config issues for external storage URLs */}
+                  <img src={src} alt={`Review image ${i + 1}`} className="w-full h-full object-cover" />
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

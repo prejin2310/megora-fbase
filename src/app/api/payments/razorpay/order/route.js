@@ -38,9 +38,13 @@ export async function POST(request) {
     return new Response(JSON.stringify(order), { status: 200 })
   } catch (error) {
     console.error("razorpay-order", error)
-    return new Response(
-      JSON.stringify({ message: "Unable to create Razorpay order." }),
-      { status: 500 }
-    )
+
+    const payload = { message: "Unable to create Razorpay order." }
+    // When debugging is enabled, include the underlying error message to help diagnose issues
+    if (process.env.DEBUG_RAZORPAY === "true" && error && error.message) {
+      payload.error = error.message
+    }
+
+    return new Response(JSON.stringify(payload), { status: 500 })
   }
 }

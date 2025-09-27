@@ -8,6 +8,9 @@ import "swiper/css"
 import "swiper/css/pagination"
 
 import ReviewModal from "@/components/home/ReviewModal"
+import { useEffect } from "react"
+import { collection, getDocs, query, orderBy, limit } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
 const COMMUNITY_REVIEWS = [
   {
@@ -61,11 +64,24 @@ const sliderBreakpoints = {
 
 export default function Reviews() {
   const [selectedReview, setSelectedReview] = useState(null)
+  const [reviews, setReviews] = useState([])
 
   const autoplayConfig = useMemo(
     () => ({ delay: 4500, disableOnInteraction: false }),
     []
   )
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const q = query(collection(db, "community_reviews"), orderBy("createdAt", "desc"), limit(10))
+        const snaps = await getDocs(q)
+        setReviews(snaps.docs.map((d) => ({ id: d.id, ...d.data() })))
+      } catch (err) {
+        console.error("Failed to load community reviews", err)
+      }
+    })()
+  }, [])
 
   return (
     <section className="bg-gradient-to-br from-white via-brand-light to-white py-16">
@@ -98,21 +114,35 @@ export default function Reviews() {
           className="pb-12"
           loop
         >
-          {COMMUNITY_REVIEWS.map((review) => (
-            <SwiperSlide key={review.orderId} className="!h-auto">
+          {reviews.map((review) => (
+            <SwiperSlide key={review.id} className="!h-auto">
               <button
                 type="button"
-                onClick={() => setSelectedReview(review)}
-                className="flex h-full w-full flex-col justify-between gap-4 rounded-3xl border border-brand/10 bg-white p-6 text-left shadow-[0_24px_45px_-35px_rgba(0,61,58,0.4)] transition-transform hover:-translate-y-1"
+                onClick={() => setSelectedReview({ ...review, message: review.message || review.text || review })}
+                className={`flex h-full w-full flex-col justify-between gap-4 rounded-3xl p-4 sm:p-6 text-left transition-transform hover:-translate-y-1 ${review.channel === 'instagram' ? 'bg-gradient-to-br from-yellow-50 to-white border border-yellow-200 shadow-[0_20px_40px_-30px_rgba(249,115,22,0.12)]' : 'bg-white border border-brand/10 shadow-[0_24px_45px_-35px_rgba(0,61,58,0.12)]'}`}
               >
-                <p className="line-clamp-5 text-sm leading-relaxed text-gray-700">{review.message}</p>
+                <p className="line-clamp-5 text-sm leading-relaxed text-gray-700">{review.message || review.text}</p>
+
+                {review.images?.length > 0 && (
+                  <div className="mt-2 flex gap-2">
+                    {review.images.slice(0, 3).map((im, idx) => {
+                      const src = typeof im === 'string' ? im : (im?.url || im)
+                      return (
+                        <div key={idx} className="h-16 w-16 rounded-md overflow-hidden border bg-gray-50">
+                          <img src={src} alt={`thumb-${idx}`} className="w-full h-full object-cover" />
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
                 <div className="space-y-1 text-sm text-gray-600">
                   <p className="font-semibold text-brand">
                     {review.name}
                     {review.city ? `, ${review.city}` : ""}
                   </p>
                   <p className="text-xs uppercase tracking-[0.25em] text-gray-400">{review.orderId}</p>
-                  <p className="text-xs text-gray-400">{review.channel} • {review.date}</p>
+                  <p className="text-xs text-gray-400">{review.channel === 'instagram' ? 'Instagram' : 'WhatsApp'} {'\u2022'} {review.date ? new Date(review.date).toLocaleDateString() : ''}</p>
                 </div>
               </button>
             </SwiperSlide>

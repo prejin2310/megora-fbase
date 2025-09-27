@@ -1,76 +1,45 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import ReviewModal from "@/components/home/ReviewModal"
-
-// Demo reviews
-const REVIEWS = [
-  {
-    name: "Ananya",
-    text: "Lovely craftsmanship and safe for daily wear. Perfect for gifting too.",
-    orderId: "OR-20250911-0001",
-    date: "2025-09-12",
-    images: ["/demo/review1.jpg"],
-  },
-  {
-    name: "Neha",
-    text: "Bridal combo looked premium in real life. Highly recommended for weddings.",
-    orderId: "OR-20250910-0007",
-    date: "2025-09-11",
-    images: [],
-  },
-  {
-    name: "Aisha",
-    text: "Fast delivery and great packaging. AD stone set sparkles beautifully. The details on the jewelry are outstanding, and the packaging felt very premium.",
-    orderId: "OR-20250909-0003",
-    date: "2025-09-10",
-    images: ["/demo/review2.jpg", "/demo/review3.jpg"],
-  },
-  {
-    name: "Riya",
-    text: "Necklace quality was superb. Exactly like the pictures shown.",
-    orderId: "OR-20250908-0002",
-    date: "2025-09-09",
-    images: [],
-  },
-  {
-    name: "Meera",
-    text: "Loved the finishing and shine. Truly premium for the price.",
-    orderId: "OR-20250907-0005",
-    date: "2025-09-08",
-    images: ["/demo/review4.jpg"],
-  },
-  {
-    name: "Sneha",
-    text: "Customer support was very helpful in customizing my order. Delivery on time.",
-    orderId: "OR-20250905-0009",
-    date: "2025-09-06",
-    images: [],
-  },
-]
+import { collection, getDocs, query, orderBy } from "firebase/firestore"
+import { db } from "@/lib/firebase"
 
 function ReviewCard({ review, onClick }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="relative w-full text-left rounded-xl bg-white shadow-md border border-brand/10 p-6 hover:shadow-lg transition"
+      className={`relative w-full text-left rounded-xl p-4 sm:p-6 hover:shadow-lg transition flex flex-col justify-between gap-4 ${review.channel === 'instagram' ? 'bg-gradient-to-br from-yellow-50 to-white border border-yellow-200 shadow-[0_18px_40px_-28px_rgba(249,115,22,0.12)]' : 'bg-white border border-brand/10 shadow-[0_18px_40px_-28px_rgba(0,61,58,0.08)]'}`}
     >
-      <span className="absolute -top-4 left-6 text-6xl font-serif text-brand/10 select-none">
-        &ldquo;
-      </span>
-
-      <p className="mt-4 text-sm text-gray-700 line-clamp-2">{review.text}</p>
-
-      <div className="mt-6 flex items-center gap-3">
-        <div className="h-10 w-10 rounded-full bg-brand/10 flex items-center justify-center font-semibold text-brand">
-          {review.name[0]}
-        </div>
-        <div>
+      <div className="flex items-start gap-3">
+        <div className="h-10 w-10 rounded-full bg-brand/10 flex items-center justify-center font-semibold text-brand">{(review.name || "?")[0]}</div>
+        <div className="flex-1">
           <p className="font-medium text-brand">{review.name}</p>
-          <p className="text-xs text-gray-500">Verified Buyer</p>
+          <p className="text-xs text-gray-500">Verified Buyer • {review.city || '—'}</p>
         </div>
+      </div>
+
+      <p className="mt-2 text-sm text-gray-700 line-clamp-3">{review.message || review.text}</p>
+
+      {/* thumbnails */}
+      {review.images?.length > 0 && (
+        <div className="mt-3 flex gap-2">
+          {review.images.slice(0, 3).map((im, idx) => {
+            const src = typeof im === 'string' ? im : (im?.url || im)
+            return (
+              <div key={idx} className="h-14 w-14 rounded-md overflow-hidden border bg-gray-50">
+                <img src={src} alt={`thumb-${idx}`} className="w-full h-full object-cover" />
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      <div className="mt-4 flex items-center justify-between text-sm text-gray-400">
+        <div className="uppercase tracking-widest text-xs text-gray-400">{review.orderId || '—'}</div>
+        <div className="text-xs text-gray-400">{review.channel === 'instagram' ? 'Instagram' : 'WhatsApp'} {'\u2022'} {review.date ? new Date(review.date).toLocaleDateString() : ''}</div>
       </div>
     </button>
   )
@@ -79,11 +48,23 @@ function ReviewCard({ review, onClick }) {
 export default function ReviewsPage() {
   const [selected, setSelected] = useState(null)
   const [page, setPage] = useState(1)
+  const [reviews, setReviews] = useState([])
   const perPage = 6
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const snaps = await getDocs(query(collection(db, "community_reviews"), orderBy("createdAt", "desc")))
+        setReviews(snaps.docs.map((d) => ({ id: d.id, ...d.data() })))
+      } catch (err) {
+        console.error("Failed to load community reviews", err)
+      }
+    })()
+  }, [])
+
   const start = (page - 1) * perPage
-  const paginated = REVIEWS.slice(start, start + perPage)
-  const totalPages = Math.ceil(REVIEWS.length / perPage)
+  const paginated = reviews.slice(start, start + perPage)
+  const totalPages = Math.ceil(reviews.length / perPage)
 
   return (
     <section className="bg-brand-light min-h-screen">
