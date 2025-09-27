@@ -29,11 +29,20 @@ export function AuthProvider({ children }) {
             email: u.email,
             photoURL: u.photoURL,
             displayName: profile?.name || u.displayName || null,
+            name: profile?.name || null, // Keep name field separate for phone auth users
             phoneNumber: profile?.phone || u.phoneNumber || null,
             role: profile?.role || null,
             // keep raw firebase user in case callers need it
             _raw: u,
           }
+          console.debug("AuthContext: merged user data", {
+            hasProfile: !!profile,
+            profileName: profile?.name,
+            firebaseDisplayName: u.displayName,
+            finalDisplayName: merged.displayName,
+            email: merged.email,
+            phoneNumber: merged.phoneNumber
+          })
           setUser(merged)
         } catch (err) {
           console.error("AuthContext: failed to load profile", err)

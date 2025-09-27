@@ -95,10 +95,35 @@ export default function Navbar() {
   const profileMenuRef = useRef(null)
   const user = auth?.user || null
   const authLoading = auth?.initializing ?? false
-  // Derive display name, first name and initial for friendly avatar
-  const displayNameFull = (user?.displayName || user?.email || "").toString()
-  const firstName = displayNameFull ? displayNameFull.split(" ")[0] : ""
-  const firstInitial = firstName ? firstName.trim().charAt(0).toUpperCase() : "U"
+  
+  // ✅ Better logic for display name and initial - handle both email and phone auth
+  const getDisplayInfo = (user) => {
+    if (!user) return { displayName: "", firstName: "", firstInitial: "U" }
+    
+    // Priority: displayName > name from profile > email before @
+    const displayName = user.displayName || user.name || (user.email ? user.email.split('@')[0] : "")
+    const firstName = displayName ? displayName.split(" ")[0] : ""
+    const firstInitial = firstName ? firstName.trim().charAt(0).toUpperCase() : "U"
+    
+    return { displayName, firstName, firstInitial }
+  }
+  
+  const { displayName: userDisplayName, firstName, firstInitial } = getDisplayInfo(user)
+  
+  // ✅ Better logic for profile dropdown info
+  const getProfileInfo = (user) => {
+    if (!user) return { primaryInfo: "", secondaryInfo: "" }
+    
+    // Primary info is always the name
+    const primaryInfo = user.displayName || user.name || "User"
+    
+    // Secondary info: email if available, otherwise phone
+    const secondaryInfo = user.email || user.phoneNumber || ""
+    
+    return { primaryInfo, secondaryInfo }
+  }
+  
+  const { primaryInfo, secondaryInfo } = getProfileInfo(user)
   const sanitizedQuery = query.trim()
   const hasQuery = sanitizedQuery.length >= 2
 
@@ -557,7 +582,7 @@ export default function Navbar() {
 
               <div className="pt-2">
                 {user ? (
-                  <Link href="/profile" onClick={() => setOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:bg-gray-100">{firstName || user.displayName || 'Profile'}</Link>
+                  <Link href="/profile" onClick={() => setOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:bg-gray-100">{primaryInfo || 'Profile'}</Link>
                 ) : (
                   <Link href="/login" onClick={() => setOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-800 hover:bg-gray-100">Login / Signup</Link>
                 )}
@@ -680,7 +705,7 @@ export default function Navbar() {
       type="button"
       onClick={() => setProfileMenuOpen((prev) => !prev)}
       className="transition"
-      title={firstName || user?.displayName || "My Account"}
+      title={primaryInfo || "My Account"}
       aria-haspopup="menu"
       aria-expanded={profileMenuOpen}
     >
@@ -697,10 +722,10 @@ export default function Navbar() {
       <div className="absolute right-0 mt-3 w-48 rounded-xl bg-white/95 shadow-xl ring-1 ring-black/5 backdrop-blur-md">
         <div className="px-4 py-3 border-b border-gray-100">
           <p className="text-sm font-semibold text-gray-800">
-            {firstName || user.displayName || "Welcome back"}
+            {primaryInfo}
           </p>
-          {user.email && (
-            <p className="text-xs text-gray-500 truncate">{user.email}</p>
+          {secondaryInfo && (
+            <p className="text-xs text-gray-500 truncate">{secondaryInfo}</p>
           )}
         </div>
         <div className="py-2">

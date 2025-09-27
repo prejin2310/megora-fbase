@@ -202,7 +202,7 @@ export default function QuickViewModal({ open, onClose, product }) {
           </div>
         ) : (
           <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center px-4 py-10">
+            <div className="flex min-h-full items-center justify-center p-2 md:px-4 md:py-10">
               <Transition.Child
                 as={Fragment}
                 enter="ease-out duration-200"
@@ -212,32 +212,32 @@ export default function QuickViewModal({ open, onClose, product }) {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="relative w-full max-w-5xl overflow-hidden rounded-[32px] border border-brand/10 bg-white shadow-[0_35px_75px_-35px_rgba(0,61,58,0.45)]">
-                  {/* close button */}
+                <Dialog.Panel className="relative w-full max-w-5xl overflow-hidden rounded-2xl border border-brand/10 bg-white shadow-[0_35px_75px_-35px_rgba(0,61,58,0.45)] md:rounded-[32px]">
+                  {/* close button - fixed z-index and mobile positioning */}
                   <button
                     type="button"
                     onClick={onClose}
-                    className="absolute right-4 top-4 rounded-full bg-white/80 p-2 text-gray-500 transition hover:text-brand"
+                    className="absolute right-3 top-3 z-20 rounded-full bg-white/95 p-2 text-gray-500 shadow-lg transition hover:bg-white hover:text-brand md:right-4 md:top-4"
                     aria-label="Close quick view"
                   >
-                    <XMarkIcon className="h-5 w-5" />
+                    <XMarkIcon className="h-4 w-4 md:h-5 md:w-5" />
                   </button>
 
-                  {/* main content */}
-                  <div className="grid gap-8 p-6 md:grid-cols-[1.1fr_0.9fr] md:p-10">
-                    {/* left: images */}
-                    <div className="space-y-4">
-                      <div className="relative overflow-hidden rounded-[28px] bg-brand-light">
+                  {/* main content - responsive grid and padding */}
+                  <div className="grid gap-4 p-4 md:grid-cols-[1.1fr_0.9fr] md:gap-8 md:p-10">
+                    {/* left: images - mobile optimized */}
+                    <div className="space-y-3 md:space-y-4">
+                      <div className="relative overflow-hidden rounded-2xl bg-brand-light md:rounded-[28px]">
                         <Image
                           src={selectedImage || "/demo/product1.jpg"}
                           alt={product?.title || "Product image"}
                           width={640}
                           height={720}
-                          className="h-full w-full max-h-[520px] rounded-[28px] object-cover"
+                          className="h-full w-full max-h-[300px] rounded-2xl object-cover md:max-h-[520px] md:rounded-[28px]"
                         />
                       </div>
                       {imageGallery.length > 1 && (
-                        <div className="flex gap-3 overflow-x-auto">
+                        <div className="flex gap-2 overflow-x-auto pb-1 md:gap-3">
                           {imageGallery.map((img, index) => {
                             const src = img?.url || img
                             if (!src) return null
@@ -247,9 +247,9 @@ export default function QuickViewModal({ open, onClose, product }) {
                                 type="button"
                                 onClick={() => setSelectedImage(src)}
                                 className={clsx(
-                                  "relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border transition",
+                                  "relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border transition md:h-20 md:w-20 md:rounded-2xl",
                                   selectedImage === src
-                                    ? "border-brand shadow"
+                                    ? "border-brand shadow-md"
                                     : "border-brand/10 hover:border-brand"
                                 )}
                               >
@@ -266,24 +266,24 @@ export default function QuickViewModal({ open, onClose, product }) {
                       )}
                     </div>
 
-                    {/* right: details */}
-                    <div className="space-y-6">
-                      <div className="space-y-3">
-                        <Dialog.Title className="text-2xl font-semibold text-brand">
+                    {/* right: details - mobile optimized */}
+                    <div className="space-y-4 md:space-y-6">
+                      <div className="space-y-2 md:space-y-3">
+                        <Dialog.Title className="text-xl font-semibold text-brand md:text-2xl">
                           {product?.title || "Product"}
                         </Dialog.Title>
                         {product?.subtitle && (
                           <p className="text-sm text-gray-500">{product.subtitle}</p>
                         )}
                         {product?.description && (
-                          <p className="text-sm leading-relaxed text-gray-600">
+                          <p className="text-sm leading-relaxed text-gray-600 line-clamp-3 md:line-clamp-none">
                             {product.description}
                           </p>
                         )}
                       </div>
 
-                      <div className="flex items-baseline gap-3">
-                        <span className="text-2xl font-semibold text-brand">
+                      <div className="flex items-baseline gap-2 md:gap-3">
+                        <span className="text-xl font-semibold text-brand md:text-2xl">
                           ₹{priceINR.toLocaleString("en-IN")}
                         </span>
                         {mrpINR && mrpINR > priceINR && (
@@ -295,7 +295,7 @@ export default function QuickViewModal({ open, onClose, product }) {
 
                       {/* Variants */}
                       {variants.length > 1 && (
-                        <div className="space-y-3">
+                        <div className="space-y-2 md:space-y-3">
                           <span className="text-xs font-semibold uppercase tracking-[0.25em] text-gray-500">
                             Select variant
                           </span>
@@ -306,7 +306,7 @@ export default function QuickViewModal({ open, onClose, product }) {
                                 type="button"
                                 onClick={() => handleSelectVariant(variant?.id)}
                                 className={clsx(
-                                  "rounded-full border px-3 py-1 text-xs font-medium transition",
+                                  "rounded-full border px-3 py-1.5 text-xs font-medium transition",
                                   selectedVariant?.id === variant?.id
                                     ? "border-brand bg-brand/10 text-brand"
                                     : "border-brand/20 text-gray-600 hover:border-brand/40"
@@ -321,7 +321,7 @@ export default function QuickViewModal({ open, onClose, product }) {
 
                       {/* Colors */}
                       {colorOptions.length > 0 && (
-                        <div className="space-y-3">
+                        <div className="space-y-2 md:space-y-3">
                           <span className="text-xs font-semibold uppercase tracking-[0.25em] text-gray-500">
                             Colour
                           </span>
@@ -342,7 +342,7 @@ export default function QuickViewModal({ open, onClose, product }) {
                               >
                                 <span className="sr-only">{color}</span>
                                 {colorTooltip === color && (
-                                  <span className="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 rounded-full bg-brand px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white">
+                                  <span className="pointer-events-none absolute -bottom-8 left-1/2 z-10 -translate-x-1/2 rounded-full bg-brand px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white">
                                     {color}
                                   </span>
                                 )}
@@ -363,14 +363,14 @@ export default function QuickViewModal({ open, onClose, product }) {
                         )}
                       </div>
 
-                      {/* Actions */}
-                      <div className="flex flex-col gap-3 sm:flex-row">
+                      {/* Actions - mobile optimized */}
+                      <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                         <button
                           type="button"
                           onClick={handlePrimaryAction}
                           disabled={savingNotify && outOfStock}
                           className={clsx(
-                            "flex flex-1 items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold text-white transition",
+                            "flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition md:px-6 md:py-3",
                             outOfStock
                               ? "bg-brand/80 hover:bg-brand disabled:cursor-not-allowed"
                               : "bg-brand hover:bg-brand/90"
@@ -378,29 +378,29 @@ export default function QuickViewModal({ open, onClose, product }) {
                         >
                           {outOfStock ? (
                             <>
-                              <BellAlertIcon className="h-5 w-5" />
+                              <BellAlertIcon className="h-4 w-4 md:h-5 md:w-5" />
                               {savingNotify ? "Saving..." : "Notify me"}
                             </>
                           ) : (
                             <>
-                              <ShoppingBagIcon className="h-5 w-5" />
+                              <ShoppingBagIcon className="h-4 w-4 md:h-5 md:w-5" />
                               Add to cart
                             </>
                           )}
                         </button>
                         <Link
                           href={`/product/${product.handle || ""}`}
-                          className="flex flex-1 items-center justify-center rounded-full border border-brand/30 px-6 py-3 text-sm font-semibold text-brand transition hover:bg-brand/10"
+                          className="flex flex-1 items-center justify-center rounded-full border border-brand/30 px-4 py-2.5 text-sm font-semibold text-brand transition hover:bg-brand/10 md:px-6 md:py-3"
                         >
-                          View full details
+                          View details
                         </Link>
                       </div>
 
-                      {/* Notify form */}
+                      {/* Notify form - mobile optimized */}
                       {outOfStock && (
                         <form
                           onSubmit={handleNotifySubmit}
-                          className="space-y-3 rounded-2xl border border-brand/15 bg-brand-light/60 p-4"
+                          className="space-y-3 rounded-xl border border-brand/15 bg-brand-light/60 p-3 md:rounded-2xl md:p-4"
                         >
                           <p className="text-sm font-semibold text-brand">
                             Get notified when this returns
