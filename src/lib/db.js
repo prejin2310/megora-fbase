@@ -115,13 +115,22 @@ export async function getStoreSettings() {
 // 🔹 Fetch latest products
 //
 export async function getNewArrivals(count = 6) {
-  const q = query(
-    collection(db, "products"),
-    orderBy("createdAt", "desc"),
-    limit(count)
-  )
-  const snapshot = await getDocs(q)
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  try {
+    const q = query(
+      collection(db, "products"),
+      orderBy("createdAt", "desc"),
+      limit(count)
+    )
+    const snapshot = await getDocs(q)
+    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  } catch (error) {
+    console.error("Error fetching new arrivals:", error)
+    // Log more details about the error
+    if (error.code === 'permission-denied') {
+      console.error("Firebase permission denied - check Firestore security rules for 'products' collection")
+    }
+    return []
+  }
 }
 
 //
@@ -262,7 +271,10 @@ export async function getProductsByCategory(slug, max = 12) {
     // 1️⃣ Find category by slug
     const catQuery = query(collection(db, "categories"), where("slug", "==", slug))
     const catSnap = await getDocs(catQuery)
-    if (catSnap.empty) return []
+    if (catSnap.empty) {
+      console.warn(`No category found with slug: ${slug}`)
+      return []
+    }
 
     const categoryId = catSnap.docs[0].id
 
@@ -276,6 +288,9 @@ export async function getProductsByCategory(slug, max = 12) {
     return prodSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
   } catch (err) {
     console.error("getProductsByCategory error:", err)
+    if (err.code === 'permission-denied') {
+      console.error("Firebase permission denied - check Firestore security rules for 'products' and 'categories' collections")
+    }
     return []
   }
 }

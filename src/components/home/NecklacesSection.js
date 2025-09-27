@@ -81,8 +81,8 @@ export default function NecklacesSection() {
 
         {/* Content */}
         {loading ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, index) => (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 lg:gap-5 xl:grid-cols-5 xl:gap-6">
+            {Array.from({ length: 10 }).map((_, index) => (
               <ProductSkeleton key={index} />
             ))}
           </div>
@@ -139,23 +139,40 @@ export default function NecklacesSection() {
 //
 function ProductSkeleton() {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-brand/10 bg-white p-5">
-      {/* Image placeholder */}
-      <div
-        className="animate-pulse rounded-2xl bg-brand/10"
-        style={{ aspectRatio: "4 / 5" }}
-      />
-
-      {/* Title + subtitle */}
-      <div className="mt-4 space-y-3">
-        <div className="h-4 w-3/4 animate-pulse rounded-full bg-brand/20" />
-        <div className="h-4 w-1/2 animate-pulse rounded-full bg-brand/20" />
+    <div className="group relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-brand/10 bg-white shadow-md">
+      {/* Image skeleton with proper aspect ratio */}
+      <div className="relative aspect-[3/4] w-full overflow-hidden">
+        <div className="h-full w-full animate-pulse rounded-t-xl bg-brand/15" />
+        
+        {/* Icon skeletons in top-right */}
+        <div className="absolute right-2 top-2 flex flex-col gap-2">
+          <div className="h-8 w-8 animate-pulse rounded-full bg-white/60 shadow-md" />
+          <div className="h-8 w-8 animate-pulse rounded-full bg-white/60 shadow-md" />
+        </div>
       </div>
 
-      {/* Action buttons */}
-      <div className="mt-auto flex flex-col gap-3 pt-5">
-        <div className="h-10 w-full animate-pulse rounded-full bg-brand/15" />
-        <div className="h-10 w-full animate-pulse rounded-full bg-brand/15" />
+      {/* Content skeleton */}
+      <div className="flex flex-1 flex-col gap-2 p-3">
+        {/* Title skeleton */}
+        <div className="h-4 w-3/4 animate-pulse rounded-full bg-brand/20" />
+        
+        {/* Price + Colors skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-baseline gap-2">
+            <div className="h-5 w-16 animate-pulse rounded-full bg-brand/25" />
+            <div className="h-3 w-12 animate-pulse rounded-full bg-brand/15" />
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="h-4 w-4 animate-pulse rounded-full bg-brand/20" />
+            <div className="h-4 w-4 animate-pulse rounded-full bg-brand/20" />
+          </div>
+        </div>
+        
+        {/* Button skeletons */}
+        <div className="mt-auto flex flex-col gap-2">
+          <div className="h-8 w-full animate-pulse rounded-full bg-brand/20" />
+          <div className="h-8 w-full animate-pulse rounded-full bg-brand/15" />
+        </div>
       </div>
     </div>
   )

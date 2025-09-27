@@ -1,0 +1,93 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Products collection - public read access
+    match /products/{productId} {
+      allow read: if true; // Public read access for all users
+      allow write: if request.auth != null; // Only authenticated users can write
+      
+      // Product reviews subcollection
+      match /reviews/{reviewId} {
+        allow read: if true; // Public read access
+        allow create: if request.auth != null; // Only authenticated users can create reviews
+        allow update, delete: if request.auth != null && 
+          (request.auth.uid == resource.data.userId || 
+           request.auth.token.admin == true); // Only review author or admin can modify
+      }
+    }
+    
+    // Categories collection - public read access
+    match /categories/{categoryId} {
+      allow read: if true; // Public read access for all users
+      allow write: if request.auth != null; // Only authenticated users can write
+    }
+    
+    // Community reviews collection - public read access
+    match /community_reviews/{reviewId} {
+      allow read: if true; // Public read access
+      allow create: if request.auth != null; // Only authenticated users can create
+      allow update, delete: if request.auth != null && 
+        (request.auth.uid == resource.data.userId || 
+         request.auth.token.admin == true); // Only author or admin can modify
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && request.auth.token.admin == true; // Admin access
+    }
+    
+    // Orders collection
+    match /orders/{orderId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid == resource.data.userId;
+      allow read, write: if request.auth != null && request.auth.token.admin == true; // Admin access
+    }
+    
+    // Cart collection (user-specific)
+    match /users/{userId}/cart/{cartId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Wishlist collection (user-specific)
+    match /users/{userId}/wishlist/{wishlistId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Newsletter subscriptions
+    match /newsletter/{email} {
+      allow create: if true; // Anyone can subscribe
+      allow read, update, delete: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // Notify requests (for out of stock notifications)
+    match /notify_requests/{notifyId} {
+      allow create: if true; // Anyone can create notify requests
+      allow read, update, delete: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // Store settings - public read, admin write
+    match /settings/{settingId} {
+      allow read: if true; // Public read access
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // Coupons - public read for validation, admin write
+    match /coupons/{couponId} {
+      allow read: if true; // Public read for coupon validation
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // Admin-only collections
+    match /admin/{document=**} {
+      allow read, write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // Fallback rule - deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

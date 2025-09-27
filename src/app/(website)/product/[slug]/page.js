@@ -50,26 +50,42 @@ function toPlainText(value) {
 
 function ProductSkeleton() {
   return (
-    <div className="mx-auto max-w-7xl px-4 pb-16 pt-8">
-      <div className="grid gap-10 lg:grid-cols-2">
-        <div className="space-y-4 animate-pulse">
-          <div className="relative overflow-hidden rounded-[32px] bg-neutral-200/80">
-            <div className="aspect-[4/5]" />
+    <div className="mx-auto max-w-7xl px-4 pb-16 pt-8 overflow-x-hidden">
+      <div className="grid gap-12 lg:grid-cols-2">
+        <div className="space-y-5 min-w-0 animate-pulse">
+          <div className="grid gap-4 sm:grid-cols-[88px_1fr]">
+            {/* Desktop thumbnails skeleton */}
+            <div className="hidden sm:flex flex-col gap-3">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="aspect-[4/5] w-full rounded-2xl bg-neutral-200/80"
+                />
+              ))}
+            </div>
+            {/* Main image skeleton */}
+            <div className="relative mx-auto w-full max-w-md sm:max-w-none overflow-hidden rounded-[32px] bg-neutral-200/80">
+              <div className="aspect-[4/5] sm:aspect-[4/5] w-full" />
+            </div>
           </div>
-          <div className="flex gap-3">
+          {/* Mobile thumbnails skeleton */}
+          <div className="flex gap-3 overflow-x-auto sm:hidden snap-x snap-mandatory pb-1 px-1 -mx-1">
             {Array.from({ length: 4 }).map((_, index) => (
               <div
                 key={index}
-                className="h-24 w-24 flex-shrink-0 rounded-2xl bg-neutral-200/80"
+                className="aspect-[4/5] w-20 h-24 flex-shrink-0 rounded-xl bg-neutral-200/80"
               />
             ))}
           </div>
         </div>
-        <div className="space-y-4 animate-pulse">
-          <div className="h-6 w-1/3 rounded-full bg-neutral-200/80" />
-          <div className="h-10 w-3/4 rounded-full bg-neutral-200/80" />
-          <div className="h-4 w-2/3 rounded-full bg-neutral-200/80" />
-          <div className="h-12 w-1/3 rounded-full bg-neutral-200/80" />
+        <div className="flex flex-col gap-6 min-w-0 animate-pulse">
+          <div className="space-y-4">
+            <div className="h-6 w-1/3 rounded-full bg-neutral-200/80" />
+            <div className="h-10 w-3/4 rounded-full bg-neutral-200/80" />
+            <div className="h-4 w-2/3 rounded-full bg-neutral-200/80" />
+            <div className="h-6 w-1/2 rounded-full bg-neutral-200/80" />
+            <div className="h-12 w-1/3 rounded-full bg-neutral-200/80" />
+          </div>
           <div className="h-20 w-full rounded-3xl bg-neutral-200/80" />
           <div className="h-12 w-40 rounded-full bg-neutral-200/80" />
         </div>
@@ -406,9 +422,9 @@ export default function ProductPage() {
         }}
         bgColor="transparent"
       />
-      <section className="relative mx-auto max-w-7xl px-4 pb-16 pt-8">
+      <section className="relative mx-auto max-w-7xl px-4 pb-16 pt-8 overflow-x-hidden">
         <div className="grid gap-12 lg:grid-cols-2">
-          <div className="space-y-5">
+          <div className="space-y-5 min-w-0">{/* min-w-0 prevents flex children from overflowing */}
             <div className="grid gap-4 sm:grid-cols-[88px_1fr]">
               <div className="hidden sm:flex flex-col gap-3">
                 {variantImages.map((img, index) => (
@@ -432,26 +448,26 @@ export default function ProductPage() {
                   </button>
                 ))}
               </div>
-              <div className="relative mx-auto w-full overflow-hidden rounded-[32px] bg-white/70 shadow-sm">
-                <div className="relative aspect-[4/5] w-full">
+              <div className="relative mx-auto w-full max-w-md sm:max-w-none overflow-hidden rounded-[32px] bg-white/70 shadow-sm">
+                <div className="relative aspect-[4/5] sm:aspect-[4/5] w-full">
                   <FadeImage
                       src={mainImg}
                       alt={safeProduct.title || "Product image"}
                       fill
                       priority
-                      sizes="(min-width: 1024px) 540px, (min-width: 768px) 70vw, 92vw"
+                      sizes="(min-width: 1024px) 540px, (min-width: 768px) 70vw, (min-width: 640px) 448px, 100vw"
                     />
                 </div>
               </div>
             </div>
-            <div className="flex gap-3 overflow-x-auto sm:hidden snap-x snap-mandatory pb-1">
+            <div className="flex gap-3 overflow-x-auto sm:hidden snap-x snap-mandatory pb-1 px-1 -mx-1">
               {variantImages.map((img, index) => (
                 <button
                   key={`${img}-mobile-${index}`}
                   type="button"
                   onClick={() => setMainImg(img)}
                   className={clsx(
-                    "relative aspect-[4/5] w-24 flex-shrink-0 overflow-hidden rounded-2xl border snap-center",
+                    "relative aspect-[4/5] w-20 h-24 flex-shrink-0 overflow-hidden rounded-xl border snap-center",
                     mainImg === img
                       ? "border-brand bg-white"
                       : "border-transparent bg-white/60 hover:border-brand/40"
@@ -461,13 +477,13 @@ export default function ProductPage() {
                     src={img}
                     alt={`${safeProduct.title || "Product"} thumbnail ${index + 1}`}
                     fill
-                    sizes="96px"
+                    sizes="80px"
                   />
                 </button>
               ))}
             </div>
           </div>
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 min-w-0">{/* min-w-0 prevents text overflow */}
             <div className="space-y-4">
               <div className="flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-brand/80">
                 {category?.name && (
