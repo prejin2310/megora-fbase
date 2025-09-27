@@ -167,6 +167,32 @@ export async function getCategories() {
   }
 }
 
+// Helper: extract numeric price from product (INR) safely
+function getPrice(p) {
+  if (!p) return 0
+  const price =
+    p.variants?.[0]?.prices?.INR ||
+    p.variants?.[0]?.option?.priceINR ||
+    p.priceINR ||
+    0
+  return Number(price) || 0
+}
+
+// Helper: get createdAt timestamp as milliseconds
+function getCreatedAtMs(p) {
+  const t = p?.createdAt
+  if (!t) return 0
+  // Firestore Timestamp
+  if (typeof t === "object" && typeof t.toDate === "function") {
+    return t.toDate().getTime()
+  }
+  // number (ms) or date string
+  const asNumber = Number(t)
+  if (!Number.isNaN(asNumber) && asNumber > 0) return asNumber
+  const parsed = Date.parse(t)
+  return Number.isNaN(parsed) ? 0 : parsed
+}
+
 //
 // 🔹 Filtered products (single clean version)
 //
@@ -218,9 +244,7 @@ export async function getFilteredProducts({ categorySlug, priceRange, sort }) {
     } else if (sort === "priceHigh") {
       products.sort((a, b) => getPrice(b) - getPrice(a))
     } else if (sort === "newest") {
-      products.sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      )
+      products.sort((a, b) => getCreatedAtMs(b) - getCreatedAtMs(a))
     }
 
     return products

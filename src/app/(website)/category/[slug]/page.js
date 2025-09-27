@@ -5,6 +5,7 @@ import { useParams } from "next/navigation"
 import { getFilteredProducts } from "@/lib/db"
 import ProductCard from "@/components/product/ProductCard"
 import { FunnelIcon, XMarkIcon } from "@heroicons/react/24/outline"
+import SortDropdown from "@/components/ui/SortDropdown"
 
 export default function CategoryPage() {
   const { slug } = useParams()
@@ -71,7 +72,7 @@ export default function CategoryPage() {
               <input
                 type="range"
                 min="0"
-                max="10000"
+                max="3000"
                 step="100"
                 value={priceRange[1]}
                 onChange={(e) => setPriceRange([0, Number(e.target.value)])}
@@ -91,22 +92,16 @@ export default function CategoryPage() {
     </p>
 
     <div className="flex items-center gap-4">
-      <div className="relative inline-block">
-        <select
-          value={sortOption}
-          onChange={(e) => setSortOption(e.target.value)}
-          className="appearance-none rounded-lg border border-brand/20 bg-white px-4 py-2 text-sm text-brand-dark shadow-sm focus:outline-none focus:ring-2 focus:ring-brand pr-10"
-        >
-          <option value="default">Default Sort</option>
-          <option value="newest">Newest First</option>
-          <option value="priceLow">Price: Low to High</option>
-          <option value="priceHigh">Price: High to Low</option>
-        </select>
-        {/* custom dropdown arrow */}
-        <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-          ▼
-        </div>
-      </div>
+      <SortDropdown
+        value={sortOption}
+        onChange={(v) => setSortOption(v)}
+        options={[
+          { value: "default", label: "Default Sort" },
+          { value: "newest", label: "Newest First" },
+          { value: "priceLow", label: "Price: Low to High" },
+          { value: "priceHigh", label: "Price: High to Low" },
+        ]}
+      />
 
       {/* Filter button (mobile only) */}
       <button
@@ -210,7 +205,7 @@ export default function CategoryPage() {
               <input
                 type="range"
                 min="0"
-                max="10000"
+                max="3000"
                 step="100"
                 value={priceRange[1]}
                 onChange={(e) => setPriceRange([0, Number(e.target.value)])}

@@ -10,6 +10,7 @@ import { FunnelIcon, XMarkIcon, ShoppingBagIcon, SparklesIcon } from "@heroicons
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import toast from "react-hot-toast"
+import SortDropdown from "@/components/ui/SortDropdown"
 
 const curatedSearches = [
   {
@@ -45,7 +46,7 @@ export default function ProductsPage() {
 
   // Filters
   const [sortOption, setSortOption] = useState("default")
-  const [priceRange, setPriceRange] = useState([0, 10000])
+  const [priceRange, setPriceRange] = useState([0, 3000])
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [showFilters, setShowFilters] = useState(false) // mobile drawer
   const [query, setQuery] = useState("")
@@ -98,7 +99,7 @@ export default function ProductsPage() {
               <input
                 type="range"
                 min="0"
-                max="10000"
+                max="3000"
                 step="100"
                 value={priceRange[1]}
                 onChange={(e) => setPriceRange([0, Number(e.target.value)])}
@@ -150,16 +151,16 @@ export default function ProductsPage() {
               </p>
 
               <div className="flex items-center gap-4">
-                <select
+                <SortDropdown
                   value={sortOption}
-                  onChange={(e) => setSortOption(e.target.value)}
-                  className="rounded-lg border border-brand/20 bg-white px-4 py-2 text-sm text-brand-dark shadow-sm focus:outline-none"
-                >
-                  <option value="default">Default Sort</option>
-                  <option value="newest">Newest First</option>
-                  <option value="priceLow">Price: Low to High</option>
-                  <option value="priceHigh">Price: High to Low</option>
-                </select>
+                  onChange={(v) => setSortOption(v)}
+                  options={[
+                    { value: "default", label: "Default Sort" },
+                    { value: "newest", label: "Newest First" },
+                    { value: "priceLow", label: "Price: Low to High" },
+                    { value: "priceHigh", label: "Price: High to Low" },
+                  ]}
+                />
 
                 {/* Filter button (mobile only) */}
                 <button
@@ -225,7 +226,7 @@ export default function ProductsPage() {
                   <button
                     onClick={() => {
                       setSelectedCategory("all")
-                      setPriceRange([0, 10000])
+                      setPriceRange([0, 3000])
                       setSortOption("default")
                       setCurrentPage(1)
                     }}
@@ -317,7 +318,7 @@ export default function ProductsPage() {
                 <input
                   type="range"
                   min="0"
-                  max="10000"
+                  max="3000"
                   step="100"
                   value={priceRange[1]}
                   onChange={(e) => setPriceRange([0, Number(e.target.value)])}
