@@ -58,8 +58,8 @@
 
 /* Toaster / react-hot-toast container adjustments */
 .site-toaster {
-  /* ensure the toasts are offset from top-left on desktop */
-  padding-top: 0; /* container level padding - we use inline containerStyle for exact offset */
+  /* We'll position the toasts from the bottom center; containerStyle on Toaster handles offsets */
+  padding: 0;
 }
 
 /* mobile: move in a bit from edges and make toasts full width-ish */
@@ -67,12 +67,55 @@
   .site-toaster {
     left: 8px !important;
     right: 8px !important;
-    top: 12px !important;
+    bottom: 12px !important;
     width: auto !important;
   }
   .react-hot-toast {
     min-width: 0 !important;
     width: auto !important;
+    border-radius: 0.75rem !important;
+    padding: 0.9rem 1rem !important;
+    font-size: 0.98rem !important;
+    min-height: 52px !important;
   }
 }
+
+/* strengthen default toast appearance */
+.react-hot-toast {
+  --tw-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  box-shadow: var(--tw-shadow) !important;
+  border-radius: 0.75rem !important;
+  padding: 1rem 1.25rem !important;
+  min-height: 56px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem;
+}
+
+/* Optionally style the toast message content for better readability */
+.react-hot-toast > div {
+  color: inherit !important;
+}
+
+/* glassy toast wrapper to hint interactivity */
+.site-toaster-wrapper {
+  display: flex;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+/* glass effect for the content and clickable affordance */
+.react-hot-toast {
+  background: rgba(17,24,39,0.72) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  cursor: pointer;
+  transition: transform 140ms cubic-bezier(.2,.9,.2,1), opacity 140ms ease;
+  color: #ffffff !important;
+}
+.react-hot-toast:hover {
+  transform: translateY(-2px);
+  opacity: 1;
+}
+
 
